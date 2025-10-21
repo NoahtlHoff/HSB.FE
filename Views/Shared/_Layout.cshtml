@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>@ViewData["Title"] - TradeScope AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
+    <link rel="stylesheet" href="~/HackStreeBoys_Website.styles.css" asp-append-version="true"/>
+</head>
+<body>
+<div class="page-shell">
+    <header class="site-header">
+        <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">TradeScope AI</a>
+        <nav class="primary-nav">
+            <a asp-area="" asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
+            <a asp-area="" asp-controller="Chat" asp-action="Index" class="nav-link">Chat</a>
+            <a asp-area="" asp-controller="Home" asp-action="About" class="nav-link">About</a>
+        </nav>
+    </header>
+
+    <main class="page-content" role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div>&copy; @DateTime.UtcNow.Year TradeScope AI</div>
+        <div class="footer-links">
+            <a asp-area="" asp-controller="Home" asp-action="About">About</a>
+            <a asp-area="" asp-controller="Chat" asp-action="Index">Chat</a>
+        </div>
+    </footer>
+</div>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

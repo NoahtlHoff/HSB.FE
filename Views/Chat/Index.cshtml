@@ -1,0 +1,146 @@
+@model HackStreeBoys_Website.Models.ChatViewModel
+@using System.Collections.Generic
+@using System.Text.Json
+@using System.Text.Encodings.Web
+@using System.Globalization
+
+@{
+    var jsonOptions = new JsonSerializerOptions
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+    var seedJson = JsonSerializer.Serialize(Model, jsonOptions);
+}
+
+<section class="chat-page">
+    <aside class="chat-filters" data-profiles="@Html.Raw(JsonSerializer.Serialize(Model.TraderProfiles, jsonOptions))">
+        <h2>Your Profile</h2>
+        <p>Lock in your trading style so the copilot can tailor idea discovery, risk limits, and trade timing.</p>
+        <label for="traderSelect">Trader</label>
+        <select id="traderSelect" class="selector">
+            @foreach (var profile in Model.TraderProfiles)
+            {
+                <option value="@profile.Id">@profile.Label</option>
+            }
+        </select>
+
+        <label for="strategySelect">Strategy</label>
+        <select id="strategySelect" class="selector">
+            @{
+                var initialStrategies = Model.TraderProfiles.FirstOrDefault()?.Strategies ?? new List<StrategyOption>();
+            }
+            @foreach (var strategy in initialStrategies)
+            {
+                <option value="@strategy.Id" data-description="@strategy.Description">@strategy.Label</option>
+            }
+        </select>
+        <p id="strategyNotes" class="strategy-notes">@initialStrategies.FirstOrDefault()?.Description</p>
+
+        <label class="toggle">
+            <input id="tradeIdeasToggle" type="checkbox" checked>
+            <span>Show annotated entry &amp; exit ideas on charts</span>
+        </label>
+
+        <div class="helper-card">
+            <h3>Fast Prompts</h3>
+            <ul>
+                <li>“What catalysts are driving this move?”</li>
+                <li>“Show me a lower-risk alternate setup.”</li>
+                <li>“Add option hedges for this plan.”</li>
+            </ul>
+        </div>
+    </aside>
+
+    <div class="chat-main">
+        <header class="chat-header">
+            <span class="eyebrow">Realtime Copilot</span>
+            <h1>Ask for ideas, risk checks, or trade plans.</h1>
+        </header>
+
+        <div class="chat-log" id="chatLog">
+            @foreach (var message in Model.SeedMessages)
+            {
+                <article class="chat-message @("chat-message-" + message.Role)">
+                    <div class="bubble">
+                        @message.Content
+                    </div>
+                </article>
+            }
+        </div>
+
+        <article class="insight-panel">
+            <header>
+                <h2>How I’d structure this swing basket</h2>
+            </header>
+            <ul>
+                <li>Diversify exposure: mix equipment makers (ASML, KLAC) with power management (ON) to balance cycles.</li>
+                <li>Stagger entries: scale in over 2-3 tranches at liquidity inflection points around VWAP and anchored VWAP.</li>
+                <li>Track catalysts: monitor earnings dates, capital expenditure guides, and geopolitical export updates weekly.</li>
+                <li>Risk tape: max 2.5R stop per name with index hedge using SMH puts if breadth deteriorates.</li>
+            </ul>
+        </article>
+
+        <div class="recommendation-grid" id="ideaDeck">
+            @foreach (var idea in Model.FeaturedIdeas)
+            {
+                var chartPoints = string.Join(",", idea.ChartPoints.Select(point => point.ToString("0.##", CultureInfo.InvariantCulture)));
+                <article class="idea-card" data-ticker="@idea.Ticker" data-company="@idea.CompanyName" data-entry="@idea.SuggestedEntry.ToString("0.##", CultureInfo.InvariantCulture)" data-exit="@idea.SuggestedExit.ToString("0.##", CultureInfo.InvariantCulture)" data-risk="@idea.RiskNote" data-points="@chartPoints">
+                    <header>
+                        <div>
+                            <span class="idea-ticker">@idea.Ticker</span>
+                            <span class="idea-company">@idea.CompanyName</span>
+                        </div>
+                        <button class="idea-add" type="button">Add to list</button>
+                    </header>
+                    <p>@idea.Thesis</p>
+                    <div class="idea-chart" role="img" aria-label="Sparkline price history for @idea.Ticker">
+                        <canvas width="280" height="120"></canvas>
+                    </div>
+                    <dl class="idea-levels">
+                        <div>
+                            <dt>Entry</dt>
+                            <dd>@idea.SuggestedEntry.ToString("0.##", CultureInfo.InvariantCulture)</dd>
+                        </div>
+                        <div>
+                            <dt>Exit</dt>
+                            <dd>@idea.SuggestedExit.ToString("0.##", CultureInfo.InvariantCulture)</dd>
+                        </div>
+                        <div>
+                            <dt>Note</dt>
+                            <dd>@idea.RiskNote</dd>
+                        </div>
+                    </dl>
+                </article>
+            }
+        </div>
+
+        <form class="chat-composer" id="chatComposer">
+            <label class="visually-hidden" for="chatInput">Ask the copilot for stock ideas</label>
+            <input id="chatInput" type="text" placeholder="Give me great swing trading stocks..." autocomplete="off"/>
+            <button type="submit" aria-label="Send message">
+                <span aria-hidden="true">➤</span>
+            </button>
+        </form>
+    </div>
+
+    <aside class="chat-watchlist">
+        <div class="watchlist-header">
+            <h2>Compare Column</h2>
+            <p>Pin ideas to gauge momentum, entry zones, and exit plans side-by-side.</p>
+        </div>
+        <div class="watchlist-items" id="watchlist" aria-live="polite">
+            <div class="empty-state">No stocks pinned yet. Add candidates from the idea deck.</div>
+        </div>
+        <label class="toggle">
+            <input id="watchlistIdeasToggle" type="checkbox" checked>
+            <span>Show recommendations for entry and exit.</span>
+        </label>
+    </aside>
+</section>
+
+<script type="application/json" id="chat-seed">@Html.Raw(seedJson)</script>
+
+@section Scripts
+{
+    <script src="~/js/chat.js" asp-append-version="true"></script>
+}

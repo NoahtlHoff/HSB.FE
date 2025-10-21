@@ -1,0 +1,93 @@
+﻿@{
+    ViewData["Title"] = "Smarter Stock Discovery";
+}
+
+<section class="hero">
+    <div class="hero-text">
+        <span class="eyebrow">AI Stock Copilot</span>
+        <h1>TradeScope AI spots high-probability setups tailored to you.</h1>
+        <p>Describe how you trade, toggle proven playbooks, and get a curated list of stocks with risk controls, confidence scores, and ready-to-trade plans.</p>
+        <div class="hero-actions">
+            <a class="btn primary" asp-controller="Chat" asp-action="Index">Launch the Copilot</a>
+            <a class="btn ghost" asp-controller="Home" asp-action="About">Meet the Makers</a>
+        </div>
+        <dl class="hero-stats">
+            <div>
+                <dt>45+</dt>
+                <dd>curated trading frameworks</dd>
+            </div>
+            <div>
+                <dt>90 sec</dt>
+                <dd>to go from question to trade plan</dd>
+            </div>
+            <div>
+                <dt>Live</dt>
+                <dd>market data, sentiment &amp; seasonality</dd>
+            </div>
+        </dl>
+    </div>
+    <div class="hero-visual">
+        <div class="snapshot-card">
+            <header>
+                <span class="badge">Swing • Breakout</span>
+                <span class="ticker">ASML</span>
+            </header>
+            <p>Stacked breakout confirmation. Volume +38% above trend and earnings gap holding.</p>
+            <div class="chart-mini" aria-hidden="true">
+                <svg viewBox="0 0 120 60" preserveAspectRatio="none">
+                    <polyline points="0,42 15,50 30,38 45,45 60,32 75,28 90,22 105,18 120,12" />
+                </svg>
+            </div>
+            <ul class="levels">
+                <li><span>Entry</span><strong>$102.50</strong></li>
+                <li><span>Exit</span><strong>$112.00</strong></li>
+                <li><span>Risk</span><strong>2.4%</strong></li>
+            </ul>
+        </div>
+        <div class="snapshot-card alt">
+            <header>
+                <span class="badge muted">Long-term • Quality</span>
+                <span class="ticker">NVDA</span>
+            </header>
+            <p>Secular AI demand + margin expansion. Layered accumulation zones with hedged exits.</p>
+            <ul class="levels key-points">
+                <li><strong>Scenario:</strong> Core + income sleeve</li>
+                <li><strong>Hedge:</strong> -15% put spread</li>
+                <li><strong>Update:</strong> Earnings in 6 days</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="feature-grid">
+    <article>
+        <h2>Understand the why, not just the ticker.</h2>
+        <p>Each recommendation includes catalysts, risk checkpoints, and position sizing prompts, so you can trade with conviction.</p>
+    </article>
+    <article>
+        <h2>Built for every style of trader.</h2>
+        <p>Configure day-trade velocity, swing structure, or long-term compounding parameters. We map ideas to your playbook.</p>
+    </article>
+    <article>
+        <h2>Compare candidates instantly.</h2>
+        <p>Pin ideas to your watch column, overlay entry/exit plans, and see momentum, volatility, and liquidity at a glance.</p>
+    </article>
+</section>
+
+<section class="workflow">
+    <h2>How traders use TradeScope AI</h2>
+    <ol class="workflow-steps">
+        <li>
+            <strong>Set your profile.</strong>
+            <span>Select your trader type and optional strategies like breakouts, pullbacks, or quality compounding.</span>
+        </li>
+        <li>
+            <strong>Chat through the setup.</strong>
+            <span>Ask for filters, risk parameters, or alternate scenarios. Each reply is context aware.</span>
+        </li>
+        <li>
+            <strong>Deploy the plan.</strong>
+            <span>Add ideas to the compare rail, activate trade drawings, and export to your broker blotter.</span>
+        </li>
+    </ol>
+</section>
