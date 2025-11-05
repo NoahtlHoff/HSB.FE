@@ -3,6 +3,7 @@
 @using System.Text.Json
 @using System.Text.Encodings.Web
 @using System.Globalization
+@inject IConfiguration Configuration
 
 @{
     var jsonOptions = new JsonSerializerOptions
@@ -16,6 +17,7 @@
     <aside class="chat-filters" data-profiles="@Html.Raw(JsonSerializer.Serialize(Model.TraderProfiles, jsonOptions))">
         <h2>Your Profile</h2>
         <p>Lock in your trading style so the copilot can tailor idea discovery, risk limits, and trade timing.</p>
+
         <label for="traderSelect">Trader</label>
         <select id="traderSelect" class="selector">
             @foreach (var profile in Model.TraderProfiles)
@@ -68,6 +70,14 @@
             }
         </div>
 
+        <form class="chat-composer" id="chatComposer">
+            <label class="visually-hidden" for="chatInput">Ask the copilot for stock ideas</label>
+            <input id="chatInput" type="text" placeholder="Give me great swing trading stocks..." autocomplete="off"/>
+            <button type="submit" aria-label="Send message">
+                <span aria-hidden="true">➤</span>
+            </button>
+        </form>
+
         <article class="insight-panel">
             <header>
                 <h2>How I’d structure this swing basket</h2>
@@ -79,6 +89,7 @@
                 <li>Risk tape: max 2.5R stop per name with index hedge using SMH puts if breadth deteriorates.</li>
             </ul>
         </article>
+
 
         <div class="recommendation-grid" id="ideaDeck">
             @foreach (var idea in Model.FeaturedIdeas)
@@ -114,13 +125,6 @@
             }
         </div>
 
-        <form class="chat-composer" id="chatComposer">
-            <label class="visually-hidden" for="chatInput">Ask the copilot for stock ideas</label>
-            <input id="chatInput" type="text" placeholder="Give me great swing trading stocks..." autocomplete="off"/>
-            <button type="submit" aria-label="Send message">
-                <span aria-hidden="true">➤</span>
-            </button>
-        </form>
     </div>
 
     <aside class="chat-watchlist">
@@ -142,5 +146,14 @@
 
 @section Scripts
 {
+    @* Inject the API base URL from appsettings.json *@
+    @{
+        var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
+    }
+
+    <script>
+        window.API_BASE_URL = "@apiBaseUrl";
+    </script>
+
     <script src="~/js/chat.js" asp-append-version="true"></script>
 }
