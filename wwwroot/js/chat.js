@@ -199,26 +199,67 @@ if (ctx) {
     return `Scanning ${profileLabel} setups using ${strategyLabel}. ${idea.ticker} stands out with ${idea.thesis.toLowerCase()} Consider entries near ${idea.suggestedEntry.toFixed(2)} with exits around ${idea.suggestedExit.toFixed(2)}.`;
   };
 
-  const handleComposerSubmit = (event) => {
-    event.preventDefault();
-    const value = chatInput.value.trim();
-    if (!value) {
-      return;
-    }
+    // Function for when user submits a chat message.
+    async function handleComposerSubmit(e) {
 
-    appendMessage("user", value);
+    e.preventDefault();
+    const userText = chatInput.value.trim();
+    if (!userText) return;
+
+    // Display user message
+    appendMessage("user", userText);
     chatInput.value = "";
 
-    const profile = profiles[traderSelect.value];
-    const profileLabel = profile?.label ?? "your";
-    const strategyLabel =
-      profile?.strategies.find((item) => item.id === strategySelect.value)?.label ??
-      "your chosen";
+    // Show temporary "Thinking..." message
+    const thinkingMsg = document.createElement("article");
+    thinkingMsg.className = "chat-message chat-message-assistant";
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = "Thinking...";
+    thinkingMsg.appendChild(bubble);
+    chatLog.appendChild(thinkingMsg);
+    chatLog.scrollTop = chatLog.scrollHeight;
 
-    setTimeout(() => {
-      appendMessage("assistant", suggestIdea(profileLabel, strategyLabel));
-    }, 400);
-  };
+    try {
+        const response = await fetch(`${window.API_BASE_URL}/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                messages: [
+                    { role: "system", content: "You are a helpful assistant." },
+                    { role: "user", content: userText }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            bubble.textContent = "Error: " + response.statusText;
+            return;
+        }
+
+        // Stream the response
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        bubble.textContent = ""; // clear "Thinking..."
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk
+                .split("\n")
+                .filter(line => line.startsWith("data: "))
+                .map(line => line.replace(/^data: /, ""));
+
+            for (const text of lines) {
+                bubble.textContent += text;
+                chatLog.scrollTop = chatLog.scrollHeight;
+            }
+        }
+    } catch (err) {
+        bubble.textContent = "Error: " + err.message;
+    }};
 
   const initializeIdeaDeck = () => {
     ideaDeck.querySelectorAll(".idea-card").forEach((card) => {
