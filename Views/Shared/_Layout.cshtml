@@ -9,6 +9,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/HackStreeBoys_Website.styles.css" asp-append-version="true"/>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2L50EP8G5P"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-2L50EP8G5P');
+    </script>
 </head>
 <body>
 <div class="page-shell">
@@ -18,6 +26,7 @@
             <a asp-area="" asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
             <a asp-area="" asp-controller="Chat" asp-action="Index" class="nav-link">Chat</a>
             <a asp-area="" asp-controller="Home" asp-action="About" class="nav-link">About</a>
+            <a asp-area="" asp-controller="Account" asp-action="Login" class="nav-link">Login</a>
         </nav>
     </header>
 

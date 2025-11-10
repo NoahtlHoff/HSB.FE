@@ -1,0 +1,76 @@
+@model HackStreeBoys_Website.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Log in to TradeScope";
+    var statusMessage = ViewData["FormStatusMessage"] as string;
+    var statusLevel = (ViewData["FormStatusLevel"] as string) ?? "info";
+}
+
+<section class="auth-stage">
+    <div class="auth-shell">
+        <div class="auth-card">
+            <div class="auth-card__intro">
+                <span class="eyebrow">Welcome back</span>
+                <h1>Log in to your workspace</h1>
+                <p class="lede">
+                    Authenticate to unlock your saved trader profile, past sessions, and personalized watchlists.
+                </p>
+            </div>
+
+            <div class="auth-secondary-action">
+                <a asp-controller="Account" asp-action="Register" class="btn ghost auth-secondary-btn">Create account</a>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(statusMessage))
+            {
+                <div class="form-status form-status-@statusLevel">
+                    <span>@statusMessage</span>
+                </div>
+            }
+
+            <form asp-action="Login" method="post" class="auth-form" novalidate data-live-validate>
+                <div asp-validation-summary="ModelOnly" class="form-summary"></div>
+
+                <div class="form-group">
+                    <div class="group-heading">
+                        <label asp-for="Email"></label>
+                        <span class="field-status" data-field-status data-state="idle">
+                            <span class="dot"></span>
+                            <span class="status-text"></span>
+                        </span>
+                    </div>
+                    <input asp-for="Email" class="text-input" placeholder="you@email.com" data-field-input required autocomplete="username" />
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <div class="group-heading">
+                        <label asp-for="Password"></label>
+                        <span class="field-status" data-field-status data-state="idle">
+                            <span class="dot"></span>
+                            <span class="status-text"></span>
+                        </span>
+                    </div>
+                    <input asp-for="Password" class="text-input" placeholder="Password" data-field-input required minlength="8" maxlength="64" autocomplete="current-password" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,64}$" title="Use 8-64 characters with upper, lower, number, and symbol." />
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <button type="submit" class="btn primary auth-btn">Login</button>
+            </form>
+
+        </div>
+
+        <aside class="auth-panel">
+            <h2>Stay signed in for lightning-fast sessions.</h2>
+            <ul class="auth-panel__list">
+                <li>Resume conversations exactly where you left off.</li>
+                <li>Sync trade ideas between desktop and mobile.</li>
+                <li>Get instant feedback on risk and execution timing.</li>
+            </ul>
+        </aside>
+    </div>
+</section>
+
+@section Scripts
+{
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
