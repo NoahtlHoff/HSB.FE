@@ -201,65 +201,107 @@ if (ctx) {
 
     // Function for when user submits a chat message.
     async function handleComposerSubmit(e) {
+        e.preventDefault();
+        const userText = chatInput.value.trim();
+        if (!userText) return;
 
-    e.preventDefault();
-    const userText = chatInput.value.trim();
-    if (!userText) return;
+        // Display user message
+        appendMessage("user", userText);
+        chatInput.value = "";
 
-    // Display user message
-    appendMessage("user", userText);
-    chatInput.value = "";
+        // Show temporary "Thinking..." message
+        const thinkingMsg = document.createElement("article");
+        thinkingMsg.className = "chat-message chat-message-assistant";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        bubble.textContent = "Thinking...";
+        thinkingMsg.appendChild(bubble);
+        chatLog.appendChild(thinkingMsg);
+        chatLog.scrollTop = chatLog.scrollHeight;
 
-    // Show temporary "Thinking..." message
-    const thinkingMsg = document.createElement("article");
-    thinkingMsg.className = "chat-message chat-message-assistant";
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.textContent = "Thinking...";
-    thinkingMsg.appendChild(bubble);
-    chatLog.appendChild(thinkingMsg);
-    chatLog.scrollTop = chatLog.scrollHeight;
+        try {
+            const response = await fetch(`${window.API_BASE_URL}/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: "You are a helpful assistant." },
+                        { role: "user", content: userText }
+                    ]
+                })
+            });
 
-    try {
-        const response = await fetch(`${window.API_BASE_URL}/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                messages: [
-                    { role: "system", content: "You are a helpful assistant." },
-                    { role: "user", content: userText }
-                ]
-            })
-        });
-
-        if (!response.ok) {
-            bubble.textContent = "Error: " + response.statusText;
-            return;
-        }
-
-        // Stream the response
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        bubble.textContent = ""; // clear "Thinking..."
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk
-                .split("\n")
-                .filter(line => line.startsWith("data: "))
-                .map(line => line.replace(/^data: /, ""));
-
-            for (const text of lines) {
-                bubble.textContent += text;
-                chatLog.scrollTop = chatLog.scrollHeight;
+            if (!response.ok) {
+                bubble.textContent = "Error: " + response.statusText;
+                return;
             }
+
+            // Stream the response
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let buffer = "";
+            let accumulatedText = ""; // Store all text for markdown rendering
+
+            bubble.textContent = ""; // clear "Thinking..."
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                let parts = buffer.split("\n\n");
+                // Keep the last partial piece in buffer
+                buffer = parts.pop();
+
+                for (const part of parts) {
+                    if (part.startsWith("data: ")) {
+                        const jsonText = part.replace(/^data: /, "");
+                        try {
+                            // Parse the JSON-escaped text
+                            const text = JSON.parse(jsonText);
+                            accumulatedText += text;
+
+                            // Render markdown
+                            if (typeof marked !== 'undefined') {
+                                bubble.innerHTML = marked.parse(accumulatedText);
+                            }
+                            else {
+                                // Fallback: at least preserve newlines
+                                bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
+                            }
+
+                            chatLog.scrollTop = chatLog.scrollHeight;
+
+                            // Delay the output for a more readable response.
+                            await new Promise(resolve => setTimeout(resolve, 50));
+
+                        } catch (parseErr) {
+                            console.error("Failed to parse SSE data:", parseErr, jsonText);
+                        }
+                    }
+                }
+            }
+
+            // Handle any remaining buffer
+            if (buffer && buffer.startsWith("data: ")) {
+                const jsonText = buffer.replace(/^data: /, "");
+                try {
+                    const text = JSON.parse(jsonText);
+                    accumulatedText += text;
+                    if (typeof marked !== 'undefined') {
+                        bubble.innerHTML = marked.parse(accumulatedText);
+                    } else {
+                        bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
+                    }
+                } catch (parseErr) {
+                    console.error("Failed to parse final SSE data:", parseErr);
+                }
+            }
+
+        } catch (err) {
+            bubble.textContent = "Error: " + err.message;
         }
-    } catch (err) {
-        bubble.textContent = "Error: " + err.message;
-    }};
+    }
 
   const initializeIdeaDeck = () => {
     ideaDeck.querySelectorAll(".idea-card").forEach((card) => {
