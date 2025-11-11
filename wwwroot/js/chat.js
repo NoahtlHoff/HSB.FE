@@ -224,10 +224,13 @@ if (ctx) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    messages: [
-                        { role: "system", content: "You are a helpful assistant." },
-                        { role: "user", content: userText }
-                    ]
+                    role: "user",
+                    content: userText,
+                    // TODO:
+                    // Need to add actual userid when login is implemented.
+                    userId: "1",
+                    // Get conversationId if user selected a previous conversations or generate one if it's fresh.
+                    //conversationId: currentConvId
                 })
             });
 
