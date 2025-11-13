@@ -23,12 +23,29 @@ if (ctx) {
   const chatLog = document.getElementById("chatLog");
   const chatComposer = document.getElementById("chatComposer");
   const chatInput = document.getElementById("chatInput");
+  const chatMain = document.getElementById("chatMain");
+  const profilePanel = document.querySelector("[data-profile-panel]");
+  const profilePanelOverlay = document.querySelector("[data-profile-panel-overlay]");
+  const profilePanelToggleButtons = document.querySelectorAll("[data-profile-panel-toggle]");
+  const profilePanelClose = document.querySelector("[data-profile-panel-close]");
+  const profileSummary = document.getElementById("profileSummary");
+  const profilePanelMediaQuery = window.matchMedia("(max-width: 720px)");
 
   const profiles = Object.fromEntries(
     (ctx.traderProfiles ?? []).map((profile) => [profile.id, profile])
   );
 
   let ideaCursor = 0;
+
+  const activateConversation = () => {
+    if (chatMain && chatMain.dataset.empty !== "false") {
+      chatMain.dataset.empty = "false";
+    }
+  };
+
+  if (chatMain && chatLog && chatLog.children.length > 0) {
+    chatMain.dataset.empty = "false";
+  }
 
   const parsePoints = (datasetPoints) =>
     datasetPoints
@@ -77,6 +94,16 @@ if (ctx) {
     }
   };
 
+  const updateProfileSummary = () => {
+    if (!profileSummary || !traderSelect || !strategySelect) {
+      return;
+    }
+    const traderLabel = traderSelect.selectedOptions[0]?.textContent?.trim();
+    const strategyLabel = strategySelect.selectedOptions[0]?.textContent?.trim();
+    const summary = [traderLabel, strategyLabel].filter(Boolean).join(" • ");
+    profileSummary.textContent = summary || "Adjust settings";
+  };
+
   const refreshStrategyOptions = () => {
     const profile = profiles[traderSelect.value];
     if (!profile) {
@@ -96,12 +123,65 @@ if (ctx) {
     });
 
     strategyNotes.textContent = profile.strategies[0]?.description ?? "";
+    updateProfileSummary();
   };
 
   const updateStrategyNotes = () => {
     const selected = strategySelect.selectedOptions[0];
     if (selected) {
       strategyNotes.textContent = selected.dataset.description ?? "";
+    }
+    updateProfileSummary();
+  };
+
+  let profileOverlayTimeout;
+
+  const setProfilePanelState = (open) => {
+    if (!profilePanel) {
+      return;
+    }
+
+    profilePanel.dataset.open = String(open);
+
+    if (!profilePanelMediaQuery.matches) {
+      profilePanel.setAttribute("aria-hidden", "false");
+      document.body.classList.remove("profile-panel-open");
+      if (profilePanelOverlay) {
+        profilePanelOverlay.classList.remove("is-active");
+        profilePanelOverlay.hidden = true;
+      }
+      return;
+    }
+
+    profilePanel.setAttribute("aria-hidden", open ? "false" : "true");
+    document.body.classList.toggle("profile-panel-open", open);
+
+    if (profilePanelOverlay) {
+      if (profileOverlayTimeout) {
+        clearTimeout(profileOverlayTimeout);
+        profileOverlayTimeout = null;
+      }
+
+      if (open) {
+        profilePanelOverlay.hidden = false;
+        const animate = window.requestAnimationFrame ?? ((cb) => setTimeout(cb, 0));
+        animate(() => {
+          profilePanelOverlay.classList.add("is-active");
+        });
+      } else {
+        profilePanelOverlay.classList.remove("is-active");
+        profileOverlayTimeout = window.setTimeout(() => {
+          profilePanelOverlay.hidden = true;
+        }, 220);
+      }
+    }
+
+    if (open && profilePanelMediaQuery.matches && typeof profilePanel.focus === "function") {
+      try {
+        profilePanel.focus({ preventScroll: true });
+      } catch (error) {
+        profilePanel.focus();
+      }
     }
   };
 
@@ -178,6 +258,7 @@ if (ctx) {
   };
 
   const appendMessage = (role, text) => {
+    activateConversation();
     const article = document.createElement("article");
     article.className = `chat-message chat-message-${role}`;
     const bubble = document.createElement("div");
@@ -333,6 +414,51 @@ if (ctx) {
     ensureEmptyState();
     applyIdeaToggleState();
   };
+
+  if (profilePanel) {
+    setProfilePanelState(profilePanelMediaQuery.matches ? false : true);
+
+    profilePanelToggleButtons.forEach((button) => {
+      button.addEventListener("click", (event) => {
+        if (!profilePanelMediaQuery.matches) {
+          return;
+        }
+        event.preventDefault();
+        const isOpen = profilePanel.dataset.open === "true";
+        setProfilePanelState(!isOpen);
+      });
+    });
+
+    if (profilePanelClose) {
+      profilePanelClose.addEventListener("click", () => setProfilePanelState(false));
+    }
+
+    if (profilePanelOverlay) {
+      profilePanelOverlay.addEventListener("click", () => setProfilePanelState(false));
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && profilePanelMediaQuery.matches && profilePanel.dataset.open === "true") {
+        setProfilePanelState(false);
+      }
+    });
+
+    const handleProfileViewportChange = (event) => {
+      if (event.matches) {
+        setProfilePanelState(false);
+      } else {
+        setProfilePanelState(true);
+      }
+    };
+
+    if (typeof profilePanelMediaQuery.addEventListener === "function") {
+      profilePanelMediaQuery.addEventListener("change", handleProfileViewportChange);
+    } else if (typeof profilePanelMediaQuery.addListener === "function") {
+      profilePanelMediaQuery.addListener(handleProfileViewportChange);
+    }
+  } else if (profilePanelOverlay) {
+    profilePanelOverlay.hidden = true;
+  }
 
   traderSelect.addEventListener("change", () => {
     refreshStrategyOptions();

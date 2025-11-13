@@ -22,7 +22,13 @@
 <div class="page-shell">
     <header class="site-header">
         <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">TradeScope AI</a>
-        <nav class="primary-nav">
+        <button class="nav-toggle" type="button" data-nav-toggle aria-controls="primaryNav" aria-expanded="false">
+            <span class="visually-hidden">Toggle navigation</span>
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+        </button>
+        <nav class="primary-nav" id="primaryNav">
             <a asp-area="" asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
             <a asp-area="" asp-controller="Chat" asp-action="Index" class="nav-link">Chat</a>
             <a asp-area="" asp-controller="Home" asp-action="About" class="nav-link">About</a>
