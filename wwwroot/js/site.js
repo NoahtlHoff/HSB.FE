@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   highlightNavigation();
   enableLiveValidation();
+  initMobileNavigation();
 });
 
 function highlightNavigation() {
@@ -73,5 +74,44 @@ function enableLiveValidation() {
       input.addEventListener("input", handleInteraction);
       input.addEventListener("blur", handleInteraction);
     });
+  });
+}
+
+function initMobileNavigation() {
+  const nav = document.getElementById("primaryNav");
+  const toggle = document.querySelector("[data-nav-toggle]");
+  if (!nav || !toggle) {
+    return;
+  }
+
+  const closeNav = () => {
+    toggle.setAttribute("aria-expanded", "false");
+    nav.classList.remove("is-open");
+  };
+
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const isExpanded = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!isExpanded));
+    nav.classList.toggle("is-open", !isExpanded);
+  });
+
+  nav.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      if (window.matchMedia("(max-width: 900px)").matches) {
+        closeNav();
+      }
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!nav.classList.contains("is-open")) {
+      return;
+    }
+
+    if (nav.contains(event.target) || toggle.contains(event.target)) {
+      return;
+    }
+    closeNav();
   });
 }

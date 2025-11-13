@@ -14,7 +14,8 @@
 }
 
 <section class="chat-page chat-page--no-watchlist">
-    <aside class="chat-filters" data-profiles="@Html.Raw(JsonSerializer.Serialize(Model.TraderProfiles, jsonOptions))">
+    <aside class="chat-filters" data-profiles="@Html.Raw(JsonSerializer.Serialize(Model.TraderProfiles, jsonOptions))" data-profile-panel aria-hidden="false" tabindex="-1">
+        <button type="button" class="profile-panel-close" data-profile-panel-close aria-label="Close profile panel">&times;</button>
         <h2>Your Profile</h2>
         <p>Set trader type, strategies, and risk tolerance so the copilot tailors discovery, risk limits, and timing to you.</p>
 
@@ -52,6 +53,11 @@
             <p>Ask anything about trade plans, risk limits, or market context. The copilot will start a new conversation when you send your first message.</p>
         </div>
 
+        <button class="profile-mobile-trigger" type="button" data-profile-panel-toggle>
+            <span class="trigger-label">Trader profile</span>
+            <span class="trigger-value" id="profileSummary">Adjust settings</span>
+        </button>
+
         <header class="chat-header">
             <span class="eyebrow">Realtime Copilot</span>
             <h1>Ask for stock recommendation, company fundamental, or trade plans tuned to you.</h1>
@@ -86,6 +92,8 @@
         </label>
     </aside>
 </section>
+
+<div class="profile-panel-overlay" data-profile-panel-overlay hidden></div>
 
 <script type="application/json" id="chat-seed">@Html.Raw(seedJson)</script>
 
