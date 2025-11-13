@@ -29,6 +29,7 @@ public class AccountController : Controller
         {
             SetFormStatus(ErrorLevel, "Please fix the highlighted issues before continuing.");
             return View(model);
+
         }
 
         var registerRequest = new RegisterRequest
