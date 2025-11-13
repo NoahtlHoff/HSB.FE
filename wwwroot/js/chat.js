@@ -23,12 +23,23 @@ if (ctx) {
   const chatLog = document.getElementById("chatLog");
   const chatComposer = document.getElementById("chatComposer");
   const chatInput = document.getElementById("chatInput");
+  const chatMain = document.getElementById("chatMain");
 
   const profiles = Object.fromEntries(
     (ctx.traderProfiles ?? []).map((profile) => [profile.id, profile])
   );
 
   let ideaCursor = 0;
+
+  const activateConversation = () => {
+    if (chatMain && chatMain.dataset.empty !== "false") {
+      chatMain.dataset.empty = "false";
+    }
+  };
+
+  if (chatMain && chatLog && chatLog.children.length > 0) {
+    chatMain.dataset.empty = "false";
+  }
 
   const parsePoints = (datasetPoints) =>
     datasetPoints
@@ -178,6 +189,7 @@ if (ctx) {
   };
 
   const appendMessage = (role, text) => {
+    activateConversation();
     const article = document.createElement("article");
     article.className = `chat-message chat-message-${role}`;
     const bubble = document.createElement("div");

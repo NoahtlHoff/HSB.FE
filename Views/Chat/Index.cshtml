@@ -13,10 +13,10 @@
     var seedJson = JsonSerializer.Serialize(Model, jsonOptions);
 }
 
-<section class="chat-page">
+<section class="chat-page chat-page--no-watchlist">
     <aside class="chat-filters" data-profiles="@Html.Raw(JsonSerializer.Serialize(Model.TraderProfiles, jsonOptions))">
         <h2>Your Profile</h2>
-        <p>Lock in your trading style so the copilot can tailor idea discovery, risk limits, and trade timing.</p>
+        <p>Set trader type, strategies, and risk tolerance so the copilot tailors discovery, risk limits, and timing to you.</p>
 
         <label for="traderSelect">Trader</label>
         <select id="traderSelect" class="selector">
@@ -43,94 +43,39 @@
             <span>Show annotated entry &amp; exit ideas on charts</span>
         </label>
 
-        <div class="helper-card">
-            <h3>Fast Prompts</h3>
-            <ul>
-                <li>“What catalysts are driving this move?”</li>
-                <li>“Show me a lower-risk alternate setup.”</li>
-                <li>“Add option hedges for this plan.”</li>
-            </ul>
-        </div>
     </aside>
 
-    <div class="chat-main">
+    <div class="chat-main" id="chatMain" data-empty="true">
+        <div class="chat-welcome" id="chatWelcome">
+            <span class="eyebrow">Realtime Stock Advisor</span>
+            <h1>Let's Trade</h1>
+            <p>Ask anything about trade plans, risk limits, or market context. The copilot will start a new conversation when you send your first message.</p>
+        </div>
+
         <header class="chat-header">
             <span class="eyebrow">Realtime Copilot</span>
-            <h1>Ask for ideas, risk checks, or trade plans.</h1>
+            <h1>Ask for stock recommendation, company fundamental, or trade plans tuned to you.</h1>
         </header>
 
-        <div class="chat-log" id="chatLog">
-            @foreach (var message in Model.SeedMessages)
-            {
-                <article class="chat-message @("chat-message-" + message.Role)">
-                    <div class="bubble">
-                        @message.Content
-                    </div>
-                </article>
-            }
-        </div>
+        <div class="chat-thread" id="chatLog" aria-live="polite"></div>
 
         <form class="chat-composer" id="chatComposer">
             <label class="visually-hidden" for="chatInput">Ask the copilot for stock ideas</label>
-            <input id="chatInput" type="text" placeholder="Give me great swing trading stocks..." autocomplete="off"/>
+            <input id="chatInput" type="text" placeholder="Ask anything..." autocomplete="off" />
             <button type="submit" aria-label="Send message">
                 <span aria-hidden="true">➤</span>
             </button>
         </form>
 
-        <article class="insight-panel">
-            <header>
-                <h2>How I’d structure this swing basket</h2>
-            </header>
-            <ul>
-                <li>Diversify exposure: mix equipment makers (ASML, KLAC) with power management (ON) to balance cycles.</li>
-                <li>Stagger entries: scale in over 2-3 tranches at liquidity inflection points around VWAP and anchored VWAP.</li>
-                <li>Track catalysts: monitor earnings dates, capital expenditure guides, and geopolitical export updates weekly.</li>
-                <li>Risk tape: max 2.5R stop per name with index hedge using SMH puts if breadth deteriorates.</li>
-            </ul>
-        </article>
-
-
-        <div class="recommendation-grid" id="ideaDeck">
-            @foreach (var idea in Model.FeaturedIdeas)
-            {
-                var chartPoints = string.Join(",", idea.ChartPoints.Select(point => point.ToString("0.##", CultureInfo.InvariantCulture)));
-                <article class="idea-card" data-ticker="@idea.Ticker" data-company="@idea.CompanyName" data-entry="@idea.SuggestedEntry.ToString("0.##", CultureInfo.InvariantCulture)" data-exit="@idea.SuggestedExit.ToString("0.##", CultureInfo.InvariantCulture)" data-risk="@idea.RiskNote" data-points="@chartPoints">
-                    <header>
-                        <div>
-                            <span class="idea-ticker">@idea.Ticker</span>
-                            <span class="idea-company">@idea.CompanyName</span>
-                        </div>
-                        <button class="idea-add" type="button">Add to list</button>
-                    </header>
-                    <p>@idea.Thesis</p>
-                    <div class="idea-chart" role="img" aria-label="Sparkline price history for @idea.Ticker">
-                        <canvas width="280" height="120"></canvas>
-                    </div>
-                    <dl class="idea-levels">
-                        <div>
-                            <dt>Entry</dt>
-                            <dd>@idea.SuggestedEntry.ToString("0.##", CultureInfo.InvariantCulture)</dd>
-                        </div>
-                        <div>
-                            <dt>Exit</dt>
-                            <dd>@idea.SuggestedExit.ToString("0.##", CultureInfo.InvariantCulture)</dd>
-                        </div>
-                        <div>
-                            <dt>Note</dt>
-                            <dd>@idea.RiskNote</dd>
-                        </div>
-                    </dl>
-                </article>
-            }
-        </div>
-
+        <p class="chat-hint">Copilot can make mistakes. Verify critical information.</p>
     </div>
 
-    <aside class="chat-watchlist">
+    <div id="ideaDeck" hidden></div>
+
+    <aside class="chat-watchlist" aria-hidden="true" hidden>
         <div class="watchlist-header">
             <h2>Compare Column</h2>
-            <p>Pin ideas to gauge momentum, entry zones, and exit plans side-by-side.</p>
+            <p>Pin ideas to compare momentum, entries, exits, and risk—side‑by‑side.</p>
         </div>
         <div class="watchlist-items" id="watchlist" aria-live="polite">
             <div class="empty-state">No stocks pinned yet. Add candidates from the idea deck.</div>
