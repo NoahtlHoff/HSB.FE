@@ -4,13 +4,15 @@ namespace HackStreeBoys_Website.Models;
 
 public class RegisterViewModel
 {
-    [Required(ErrorMessage = "Name is required.")]
-    [StringLength(80, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 80 characters.")]
     [Display(Name = "Full name")]
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Email is required.")]
     [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
+    [RegularExpression(
+        @"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
+        ErrorMessage = "Please enter a valid email address (must include a domain, e.g. .com).")]
+    [DataType(DataType.EmailAddress)]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password is required.")]
