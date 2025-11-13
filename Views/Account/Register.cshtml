@@ -50,7 +50,18 @@
                             <span class="status-text"></span>
                         </span>
                     </div>
-                    <input asp-for="Email" class="text-input" placeholder="you@email.com" data-field-input required autocomplete="email" />
+                    <input asp-for="Email"
+                           type="email"
+                           class="text-input"
+                           placeholder="you@@email.com"
+                           data-field-input
+                           autocomplete="username"
+                           pattern="^[^@@\s]+@@[^@@\s]+\.[A-Za-z]{2,}$"
+                           title="Enter a valid email address including a top-level domain (e.g. user@@example.com)"
+                           data-val="true"
+                           data-val-regex="Enter a valid email address including a top-level domain (e.g. user@@example.com)"
+                           data-val-regex-pattern="^[^@@\s]+@@[^@@\s]+\.[A-Za-z]{2,}$" />
+                    <span asp-validation-for="Email" class="field-error"></span>
                     <p class="field-hint">We’ll send trade summaries and alerts to this inbox.</p>
                     <span asp-validation-for="Email" class="field-error"></span>
                 </div>

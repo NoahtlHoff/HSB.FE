@@ -1,3 +1,19 @@
+@* 
+PSEUDOCODE / PLAN (detailed):
+1. Problem: client-side instant validation accepts "ad@ad" because the HTML/JS regex was present but Razor treated '@' as code, breaking the markup and preventing validation from working.
+2. Goal: enforce that the email contains a top-level domain (e.g. ".com", ".org") so that addresses like "ad@ad" are rejected by instant feedback.
+3. Approach:
+   - Use a stricter regex: ^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$ (requires a dot and 2+ letter TLD).
+   - In Razor markup, any literal '@' inside attribute values must be escaped as '@@' so Razor emits a single '@' in the generated HTML.
+   - Update all attribute values that include example emails or the regex to double the '@' characters.
+   - Keep `asp-for="Email"` so server-side binding/validation still works.
+   - Provide `pattern`, `data-val-*` attributes for client-side validation and a helpful `title`.
+4. Implementation details:
+   - Replace occurrences of `@` inside attribute values (placeholder, title, data-val messages, regex pattern attributes) with `@@`.
+   - Leave Razor directives (like `@model`, `@section`, etc.) unchanged.
+   - Confirm the `_ValidationScriptsPartial` is still rendered for jQuery Unobtrusive Validation to pick up the data-val-regex-pattern.
+*@
+
 @model HackStreeBoys_Website.Models.LoginViewModel
 @{
     ViewData["Title"] = "Log in to TradeScope";
@@ -38,7 +54,17 @@
                             <span class="status-text"></span>
                         </span>
                     </div>
-                    <input asp-for="Email" class="text-input" placeholder="you@email.com" data-field-input required autocomplete="username" />
+                    <input asp-for="Email"
+                           type="email"
+                           class="text-input"
+                           placeholder="you@@email.com"
+                           data-field-input
+                           autocomplete="username"
+                           pattern="^[^@@\s]+@@[^@@\s]+\.[A-Za-z]{2,}$"
+                           title="Enter a valid email address including a top-level domain (e.g. user@@example.com)"
+                           data-val="true"
+                           data-val-regex="Enter a valid email address including a top-level domain (e.g. user@@example.com)"
+                           data-val-regex-pattern="^[^@@\s]+@@[^@@\s]+\.[A-Za-z]{2,}$" /> 
                     <span asp-validation-for="Email" class="field-error"></span>
                 </div>
 
