@@ -4,9 +4,6 @@ namespace HackStreeBoys_Website.Models;
 
 public class RegisterViewModel
 {
-    //[Required(ErrorMessage = "Name is required.")]
-    //[StringLength(80, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 80 characters.")] 
-    // No validation needed
     [Display(Name = "Full name")]
     public string Name { get; set; } = string.Empty;
 
