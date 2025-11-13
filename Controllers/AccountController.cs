@@ -41,7 +41,7 @@ public class AccountController : Controller
 
         var result = await _authService.RegisterAsync(registerRequest);
 
-        if (result != null && result.Success)
+        if (result != null)
         {
             SetFormStatus(SuccessLevel, $"Welcome aboard, {ExtractFirstName(model.Name)}! Your profile is ready.");
 
