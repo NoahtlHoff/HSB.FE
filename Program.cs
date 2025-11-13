@@ -7,6 +7,13 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
+        builder.Services.AddDistributedMemoryCache();
+        builder.Services.AddSession(options =>
+        {
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+            options.IdleTimeout = TimeSpan.FromHours(8);
+        });
         builder.Services.AddControllersWithViews();
 
         var app = builder.Build();
@@ -21,7 +28,7 @@ public class Program
 
         app.UseHttpsRedirection();
         app.UseRouting();
-
+        app.UseSession();
         app.UseAuthorization();
 
         app.MapStaticAssets();

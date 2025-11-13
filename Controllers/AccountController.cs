@@ -1,5 +1,6 @@
 using HackStreeBoys_Website.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace HackStreeBoys_Website.Controllers;
 
@@ -30,24 +31,36 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public IActionResult Login()
+    public IActionResult Login(string? returnUrl = null)
     {
-        return View(new LoginViewModel());
+        return View(new LoginViewModel
+        {
+            ReturnUrl = ResolveReturnUrl(returnUrl)
+        });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Login(LoginViewModel model)
     {
+        var destination = ResolveReturnUrl(model.ReturnUrl);
+        model.ReturnUrl = destination;
+
         if (!ModelState.IsValid)
         {
             SetFormStatus(ErrorLevel, "Enter a valid email and password to continue.");
             return View(model);
         }
 
-        SetFormStatus(SuccessLevel, "You're logged in. We'll keep your seat warm while we sync accounts.");
-        ModelState.Clear();
-        return View(new LoginViewModel());
+        HttpContext.Session.SetString(SessionKeys.JwtToken, GenerateDemoToken());
+        return Redirect(destination);
+    }
+
+    [HttpGet]
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Remove(SessionKeys.JwtToken);
+        return RedirectToAction("Index", "Home");
     }
 
     private void SetFormStatus(string level, string message)
@@ -65,5 +78,20 @@ public class AccountController : Controller
 
         var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return parts.Length > 0 ? parts[0] : fullName;
+    }
+
+    private string ResolveReturnUrl(string? returnUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return returnUrl;
+        }
+
+        return Url.Action("Index", "Chat") ?? "/";
+    }
+
+    private static string GenerateDemoToken()
+    {
+        return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
     }
 }

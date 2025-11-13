@@ -28,6 +28,7 @@
             }
 
             <form asp-action="Login" method="post" class="auth-form" novalidate data-live-validate>
+                <input type="hidden" asp-for="ReturnUrl" />
                 <div asp-validation-summary="ModelOnly" class="form-summary"></div>
 
                 <div class="form-group">

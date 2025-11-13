@@ -19,6 +19,9 @@
     </script>
 </head>
 <body>
+@{
+    var isAuthenticated = !string.IsNullOrEmpty(Context.Session.GetString(SessionKeys.JwtToken));
+}
 <div class="page-shell">
     <header class="site-header">
         <a class="brand" asp-area="" asp-controller="Home" asp-action="Index">TradeScope AI</a>
@@ -32,7 +35,14 @@
             <a asp-area="" asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
             <a asp-area="" asp-controller="Chat" asp-action="Index" class="nav-link">Chat</a>
             <a asp-area="" asp-controller="Home" asp-action="About" class="nav-link">About</a>
-            <a asp-area="" asp-controller="Account" asp-action="Login" class="nav-link">Login</a>
+            @if (isAuthenticated)
+            {
+                <a asp-area="" asp-controller="Account" asp-action="Logout" class="nav-link">Logout</a>
+            }
+            else
+            {
+                <a asp-area="" asp-controller="Account" asp-action="Login" class="nav-link">Login</a>
+            }
         </nav>
     </header>
 

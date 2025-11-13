@@ -1,5 +1,6 @@
 using HackStreeBoys_Website.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 
 namespace HackStreeBoys_Website.Controllers;
 
@@ -7,6 +8,13 @@ public class ChatController : Controller
 {
     public IActionResult Index()
     {
+        var token = HttpContext.Session.GetString(SessionKeys.JwtToken);
+        if (string.IsNullOrEmpty(token))
+        {
+            var returnUrl = Url.Action(nameof(Index), "Chat");
+            return RedirectToAction("Login", "Account", new { returnUrl });
+        }
+
         var viewModel = BuildViewModel();
         return View(viewModel);
     }
