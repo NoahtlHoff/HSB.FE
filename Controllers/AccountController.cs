@@ -4,16 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HackStreeBoys_Website.Controllers;
 
-public class AccountController : Controller
+public class AccountController(AuthService authService) : Controller
 {
     private const string SuccessLevel = "success";
     private const string ErrorLevel = "error";
 
-    private readonly AuthService _authService;
-    public AccountController(AuthService authService)
-    {
-        _authService = authService;
-    }
+    private readonly AuthService _authService = authService;
 
     [HttpGet]
     public IActionResult Register()
@@ -49,6 +45,7 @@ public class AccountController : Controller
             if (!string.IsNullOrEmpty(result.Token))
             {
                 HttpContext.Session.SetString("JWTToken", result.Token);
+                HttpContext.Session.SetString("UserId", result.UserId.ToString());
                 return RedirectToAction("Index", "Home");
             }
 
@@ -89,6 +86,7 @@ public class AccountController : Controller
         if (result != null && !string.IsNullOrEmpty(result.Token))
         {
             HttpContext.Session.SetString("JWTToken", result.Token);
+            HttpContext.Session.SetString("UserId", result.UserId.ToString());
 
             SetFormStatus(SuccessLevel, "You're logged in. We'll keep your seat warm while we sync accounts.");
 

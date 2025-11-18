@@ -32,7 +32,14 @@
             <a asp-area="" asp-controller="Home" asp-action="Index" class="nav-link">Home</a>
             <a asp-area="" asp-controller="Chat" asp-action="Index" class="nav-link">Chat</a>
             <a asp-area="" asp-controller="Home" asp-action="About" class="nav-link">About</a>
-            <a asp-area="" asp-controller="Account" asp-action="Login" class="nav-link">Login</a>
+            @if (string.IsNullOrEmpty(Context.Session.GetString("JWTToken")))
+            {
+                <a asp-area="" asp-controller="Account" asp-action="Login" class="nav-link">Login</a>
+            }
+            else
+            {
+                <a asp-area="" asp-controller="Account" asp-action="Logout" class="nav-link">Logout</a>
+            }
         </nav>
     </header>
 

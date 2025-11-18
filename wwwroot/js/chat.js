@@ -301,15 +301,22 @@ if (ctx) {
         chatLog.scrollTop = chatLog.scrollHeight;
 
         try {
+            const headers = {
+                "Content-Type": "application/json"
+            };
+
+            // Add Authorization header if JWT token is available
+            if (window.JWT_TOKEN) {
+                headers["Authorization"] = `Bearer ${window.JWT_TOKEN}`;
+            }
+
             const response = await fetch(`${window.API_BASE_URL}/chat`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: headers,
                 body: JSON.stringify({
                     role: "user",
                     content: userText,
-                    // TODO:
-                    // Need to add actual userid when login is implemented.
-                    userId: "1",
+                    userId: window.USER_ID || "1",
                     // Get conversationId if user selected a previous conversations or generate one if it's fresh.
                     //conversationId: currentConvId
                 })
