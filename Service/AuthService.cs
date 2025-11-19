@@ -11,7 +11,7 @@ namespace HackStreeBoys_Website.Service
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<LoginResponse> LoginAsync(LoginRequest loginRequest)
+        public async Task<LoginResponse?> LoginAsync(LoginRequest loginRequest)
         {
             var client = _httpClientFactory.CreateClient("API");
 
@@ -25,7 +25,7 @@ namespace HackStreeBoys_Website.Service
             return null;
         }
 
-        public async Task<RegisterResponse> RegisterAsync(RegisterRequest registerRequest)
+        public async Task<RegisterResponse?> RegisterAsync(RegisterRequest registerRequest)
         {
             var client = _httpClientFactory.CreateClient("API");
 
