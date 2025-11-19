@@ -1209,6 +1209,17 @@ button:hover {
 
 @media (max-width: 1320px) {
   .chat-page {
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .chat-page:not(.chat-page--no-watchlist) .chat-watchlist {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1024px) {
+  .chat-page {
     grid-template-columns: minmax(0, 1fr);
   }
 
