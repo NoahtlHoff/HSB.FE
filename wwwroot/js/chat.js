@@ -30,12 +30,14 @@ if (ctx) {
   const profilePanelClose = document.querySelector("[data-profile-panel-close]");
   const profileSummary = document.getElementById("profileSummary");
   const profilePanelMediaQuery = window.matchMedia("(max-width: 720px)");
+  const chatHistoryList = document.getElementById("chatHistoryList");
 
   const profiles = Object.fromEntries(
     (ctx.traderProfiles ?? []).map((profile) => [profile.id, profile])
   );
 
   let ideaCursor = 0;
+  let currentConversationId = null;
 
   const activateConversation = () => {
     if (chatMain && chatMain.dataset.empty !== "false") {
@@ -280,6 +282,134 @@ if (ctx) {
     return `Scanning ${profileLabel} setups using ${strategyLabel}. ${idea.ticker} stands out with ${idea.thesis.toLowerCase()} Consider entries near ${idea.suggestedEntry.toFixed(2)} with exits around ${idea.suggestedExit.toFixed(2)}.`;
   };
 
+  // Fetch chat history from API
+  const fetchChatHistory = async () => {
+    try {
+      const userId = "1"; // TODO: Replace with actual user ID from session
+      const response = await fetch(`${window.API_BASE_URL}/api/conversations?userId=${userId}`);
+
+      if (response.ok) {
+        const conversations = await response.json();
+        renderChatHistory(conversations);
+      } else {
+        console.error("Failed to fetch chat history:", response.statusText);
+        // Show empty state even if fetch fails
+        renderChatHistory([]);
+      }
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      // Show empty state even if fetch fails
+      renderChatHistory([]);
+    }
+  };
+
+  // Render chat history in sidebar
+  const renderChatHistory = (conversations) => {
+    if (!chatHistoryList) return;
+
+    chatHistoryList.innerHTML = "";
+
+    if (!conversations || conversations.length === 0) {
+      const emptyState = document.createElement("div");
+      emptyState.className = "empty-state";
+      emptyState.textContent = "No chat history";
+      chatHistoryList.appendChild(emptyState);
+      return;
+    }
+
+    conversations.forEach((conversation) => {
+      const item = document.createElement("div");
+      item.className = "chat-history-item";
+      item.dataset.conversationId = conversation.conversationId;
+
+      const title = document.createElement("span");
+      title.className = "chat-title";
+      title.textContent = conversation.conversationTitle || "Untitled Chat";
+
+      item.appendChild(title);
+
+      item.addEventListener("click", () => loadConversation(conversation.conversationId));
+
+      chatHistoryList.appendChild(item);
+    });
+  };
+
+  // Load a conversation from history
+  const loadConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`${window.API_BASE_URL}/api/conversations/${conversationId}`);
+
+      if (!response.ok) {
+        console.error("Failed to load conversation:", response.statusText);
+        return;
+      }
+
+      const conversationData = await response.json();
+
+      // Clear current chat
+      chatLog.innerHTML = "";
+
+      // Set current conversation ID
+      currentConversationId = conversationId;
+
+      // Activate conversation view
+      activateConversation();
+
+      // Render all messages
+      if (conversationData.messages && conversationData.messages.length > 0) {
+        conversationData.messages.forEach((message) => {
+          const article = document.createElement("article");
+          article.className = `chat-message chat-message-${message.role.toLowerCase()}`;
+          const bubble = document.createElement("div");
+          bubble.className = "bubble";
+
+          // Render markdown if it's an assistant message
+          if (message.role.toLowerCase() === "assistant" && typeof marked !== 'undefined') {
+            bubble.innerHTML = marked.parse(message.content);
+          } else {
+            bubble.textContent = message.content;
+          }
+
+          article.appendChild(bubble);
+          chatLog.appendChild(article);
+        });
+
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      // Update active state in sidebar
+      document.querySelectorAll(".chat-history-item").forEach((item) => {
+        if (item.dataset.conversationId === conversationId) {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+    }
+  };
+
+  // Start a new chat
+  const startNewChat = () => {
+    // Clear current conversation
+    currentConversationId = null;
+
+    // Clear chat log
+    chatLog.innerHTML = "";
+
+    // Reset to welcome screen
+    if (chatMain) {
+      chatMain.dataset.empty = "true";
+    }
+
+    // Remove active state from all history items
+    document.querySelectorAll(".chat-history-item").forEach((item) => {
+      item.classList.remove("active");
+    });
+  };
+
     // Function for when user submits a chat message.
     async function handleComposerSubmit(e) {
         e.preventDefault();
@@ -301,18 +431,21 @@ if (ctx) {
         chatLog.scrollTop = chatLog.scrollHeight;
 
         try {
+            const requestBody = {
+                role: "user",
+                content: userText,
+                userId: "1" // TODO: Replace with actual user ID from session
+            };
+
+            // Include conversationId if we're in an existing conversation
+            if (currentConversationId) {
+                requestBody.conversationId = currentConversationId;
+            }
+
             const response = await fetch(`${window.API_BASE_URL}/chat`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    role: "user",
-                    content: userText,
-                    // TODO:
-                    // Need to add actual userid when login is implemented.
-                    userId: "1",
-                    // Get conversationId if user selected a previous conversations or generate one if it's fresh.
-                    //conversationId: currentConvId
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
@@ -472,4 +605,7 @@ if (ctx) {
   refreshStrategyOptions();
   initializeIdeaDeck();
   applyWatchlistToggleState();
+
+  // Initialize chat history on page load
+  fetchChatHistory();
 }

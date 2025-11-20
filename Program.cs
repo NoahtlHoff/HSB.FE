@@ -23,6 +23,7 @@ public class Program
         });
 
         builder.Services.AddScoped<AuthService>();
+        builder.Services.AddScoped<ChatService>();
 
         var app = builder.Build();
 

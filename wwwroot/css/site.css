@@ -507,7 +507,8 @@ button:hover {
 /* Chat Page */
 .chat-page {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr) 320px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-rows: auto;
   gap: 32px;
   align-items: start;
   min-height: calc(100vh - 220px);
@@ -517,8 +518,15 @@ button:hover {
   grid-template-columns: 320px minmax(0, 1fr);
 }
 
+.chat-sidebar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .chat-filters,
-.chat-watchlist {
+.chat-watchlist,
+.chat-history-sidebar {
   background: rgba(59, 54, 94, 0.68);
   border-radius: var(--radius-lg);
   padding: 28px;
@@ -531,13 +539,15 @@ button:hover {
 }
 
 .chat-filters h2,
-.chat-watchlist h2 {
+.chat-watchlist h2,
+.chat-history-sidebar h2 {
   margin-top: 0;
   font-size: 1.35rem;
 }
 
 .chat-filters p,
-.chat-watchlist p {
+.chat-watchlist p,
+.chat-history-sidebar p {
   color: var(--text-200);
   line-height: 1.5;
 }
@@ -616,7 +626,8 @@ button:hover {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
   gap: 18px;
-  min-height: 680px;
+  height: calc(100vh - 220px);
+  max-height: calc(100vh - 220px);
 }
 
 .chat-main[data-empty="true"] {
@@ -730,9 +741,10 @@ button:hover {
   gap: 18px;
   padding: 0 8px 24px;
   overflow-y: auto;
-  flex: 1;
+  flex: 1 1 auto;
   width: min(860px, 100%);
   margin: 0 auto;
+  min-height: 0;
 }
 
 .chat-message {
@@ -900,6 +912,54 @@ button:hover {
   100% {
     box-shadow: 0 0 0 12px rgba(255, 223, 126, 0);
   }
+}
+
+.chat-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+  margin-top: 16px;
+  min-height: 100px;
+}
+
+.chat-history-item {
+  background: rgba(16, 14, 30, 0.8);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.chat-history-item:hover {
+  background: rgba(24, 21, 42, 0.9);
+  transform: translateX(4px);
+}
+
+.chat-history-item.active {
+  background: rgba(141, 242, 255, 0.15);
+  border-color: rgba(141, 242, 255, 0.4);
+}
+
+.chat-history-item .chat-title {
+  font-weight: 600;
+  color: var(--text-100);
+  font-size: 0.95rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-history-list .empty-state {
+  color: var(--text-300);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 20px 16px;
+  background: rgba(17, 14, 32, 0.5);
+  border-radius: var(--radius-md);
 }
 
 .auth-stage {
