@@ -317,8 +317,7 @@ if (ctx) {
                     role: "user",
                     content: userText,
                     userId: window.USER_ID || "1",
-                    // Get conversationId if user selected a previous conversations or generate one if it's fresh.
-                    //conversationId: currentConvId
+                    conversationId: window.currentConversationId || ""
                 })
             });
 
@@ -345,7 +344,12 @@ if (ctx) {
                 buffer = parts.pop();
 
                 for (const part of parts) {
-                    if (part.startsWith("data: ")) {
+                    if (part.startsWith("id: ")) {
+                        const conversationId = part.replace("id: ", "").trim();
+                        window.currentConversationId = conversationId
+                        continue;
+                    }
+                    else if (part.startsWith("data: ")) {
                         const jsonText = part.replace(/^data: /, "");
                         try {
                             // Parse the JSON-escaped text
