@@ -284,9 +284,14 @@ if (ctx) {
 
   // Fetch chat history from API
   const fetchChatHistory = async () => {
-    try {
-      const userId = "1"; // TODO: Replace with actual user ID from session
-      const response = await fetch(`${window.API_BASE_URL}/api/conversations?userId=${userId}`);
+      try {
+          const response = await fetch(`${window.API_BASE_URL}/api/conversations`, {
+              method: "GET",
+              headers: {
+                  "Authorization": `Bearer ${window.JWT_TOKEN}`,
+                  "Content-Type": "application/json"
+              }
+          });
 
       if (response.ok) {
         const conversations = await response.json();
@@ -317,14 +322,14 @@ if (ctx) {
       return;
     }
 
-    conversations.forEach((conversation) => {
+      conversations.forEach((conversation) => {
       const item = document.createElement("div");
       item.className = "chat-history-item";
       item.dataset.conversationId = conversation.conversationId;
 
       const title = document.createElement("span");
       title.className = "chat-title";
-      title.textContent = conversation.conversationTitle || "Untitled Chat";
+      title.textContent = conversation.name || "Untitled Chat";
 
       item.appendChild(title);
 
@@ -336,28 +341,35 @@ if (ctx) {
 
   // Load a conversation from history
   const loadConversation = async (conversationId) => {
-    try {
-      const response = await fetch(`${window.API_BASE_URL}/api/conversations/${conversationId}`);
+      try {
+        console.log(conversationId)
+      const response = await fetch(`${window.API_BASE_URL}/api/conversations/${conversationId}`, {
+          method: "GET",
+          headers: {
+              "Authorization": `Bearer ${window.JWT_TOKEN}`,
+              "Content-Type": "application/json"
+          }
+      });
 
       if (!response.ok) {
         console.error("Failed to load conversation:", response.statusText);
         return;
       }
 
-      const conversationData = await response.json();
+        const conversationData = await response.json();
 
       // Clear current chat
       chatLog.innerHTML = "";
 
       // Set current conversation ID
-      currentConversationId = conversationId;
+      window.conversationId = conversationId;
 
       // Activate conversation view
       activateConversation();
 
       // Render all messages
-      if (conversationData.messages && conversationData.messages.length > 0) {
-        conversationData.messages.forEach((message) => {
+      if (conversationData.length > 0) {
+        conversationData.forEach((message) => {
           const article = document.createElement("article");
           article.className = `chat-message chat-message-${message.role.toLowerCase()}`;
           const bubble = document.createElement("div");
