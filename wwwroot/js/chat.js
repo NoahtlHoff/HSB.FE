@@ -431,21 +431,24 @@ if (ctx) {
         chatLog.scrollTop = chatLog.scrollHeight;
 
         try {
-            const requestBody = {
-                role: "user",
-                content: userText,
-                userId: "1" // TODO: Replace with actual user ID from session
+            const headers = {
+                "Content-Type": "application/json"
             };
 
-            // Include conversationId if we're in an existing conversation
-            if (currentConversationId) {
-                requestBody.conversationId = currentConversationId;
+            // Add Authorization header if JWT token is available
+            if (window.JWT_TOKEN) {
+                headers["Authorization"] = `Bearer ${window.JWT_TOKEN}`;
             }
 
             const response = await fetch(`${window.API_BASE_URL}/chat`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestBody)
+                headers: headers,
+                body: JSON.stringify({
+                    role: "user",
+                    content: userText,
+                    userId: window.USER_ID || "1",
+                    conversationId: window.currentConversationId || ""
+                })
             });
 
             if (!response.ok) {
@@ -471,7 +474,12 @@ if (ctx) {
                 buffer = parts.pop();
 
                 for (const part of parts) {
-                    if (part.startsWith("data: ")) {
+                    if (part.startsWith("id: ")) {
+                        const conversationId = part.replace("id: ", "").trim();
+                        window.currentConversationId = conversationId
+                        continue;
+                    }
+                    else if (part.startsWith("data: ")) {
                         const jsonText = part.replace(/^data: /, "");
                         try {
                             // Parse the JSON-escaped text
