@@ -11,29 +11,29 @@ namespace HackStreeBoys_Website.Service
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<LoginResponse> LoginAsync(LoginRequest loginRequest)
+        public async Task<AuthResponseDto?> LoginAsync(UserInputDto userInput)
         {
             var client = _httpClientFactory.CreateClient("API");
 
-            var response = await client.PostAsJsonAsync("/api/auth/login", loginRequest);
+            var response = await client.PostAsJsonAsync("/api/auth/login", userInput);
 
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<LoginResponse>();
+                return await response.Content.ReadFromJsonAsync<AuthResponseDto>();
             }
 
             return null;
         }
 
-        public async Task<RegisterResponse> RegisterAsync(RegisterRequest registerRequest)
+        public async Task<AuthResponseDto?> RegisterAsync(UserInputDto userInput)
         {
             var client = _httpClientFactory.CreateClient("API");
 
-            var response = await client.PostAsJsonAsync("/api/auth/register", registerRequest);
+            var response = await client.PostAsJsonAsync("/api/auth/register", userInput);
 
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<RegisterResponse>();
+                return await response.Content.ReadFromJsonAsync<AuthResponseDto>();
             }
 
             return null;

@@ -4,16 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HackStreeBoys_Website.Controllers;
 
-public class AccountController : Controller
+public class AccountController(AuthService authService) : Controller
 {
     private const string SuccessLevel = "success";
     private const string ErrorLevel = "error";
 
-    private readonly AuthService _authService;
-    public AccountController(AuthService authService)
-    {
-        _authService = authService;
-    }
+    private readonly AuthService _authService = authService;
 
     [HttpGet]
     public IActionResult Register()
@@ -32,32 +28,28 @@ public class AccountController : Controller
 
         }
 
-        var registerRequest = new RegisterRequest
+        var userInput = new UserInputDto
         {
             Name = model.Name,
             Email = model.Email,
             Password = model.Password
         };
 
-        var result = await _authService.RegisterAsync(registerRequest);
+        var result = await _authService.RegisterAsync(userInput);
 
         if (result != null)
         {
-            SetFormStatus(SuccessLevel, $"Welcome aboard, {ExtractFirstName(model.Name)}! Your profile is ready.");
+            SetFormStatus(SuccessLevel, $"Welcome aboard, {ExtractFirstName(model.Name ?? "there")}! Your profile is ready.");
 
-            // If API returns token, auto-login
-            if (!string.IsNullOrEmpty(result.Token))
-            {
-                HttpContext.Session.SetString("JWTToken", result.Token);
-                return RedirectToAction("Index", "Home");
-            }
-
-            // Otherwise redirect to login
-            return RedirectToAction("Login");
+            // Auto-login with token
+            HttpContext.Session.SetString("JWTToken", result.Token);
+            HttpContext.Session.SetString("UserId", result.UserId.ToString());
+            HttpContext.Session.SetString("Email", result.Email);
+            return RedirectToAction("Index", "Home");
         }
         else
         {
-            SetFormStatus(ErrorLevel, result?.Message ?? "Registration failed. Please try again.");
+            SetFormStatus(ErrorLevel, "Registration failed. Please try again.");
             return View(model);
         }
     }
@@ -78,17 +70,19 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var loginRequest = new LoginRequest
+        var userInput = new UserInputDto
         {
             Email = model.Email,
             Password = model.Password
         };
 
-        var result = await _authService.LoginAsync(loginRequest);
+        var result = await _authService.LoginAsync(userInput);
 
         if (result != null && !string.IsNullOrEmpty(result.Token))
         {
             HttpContext.Session.SetString("JWTToken", result.Token);
+            HttpContext.Session.SetString("UserId", result.UserId.ToString());
+            HttpContext.Session.SetString("Email", result.Email);
 
             SetFormStatus(SuccessLevel, "You're logged in. We'll keep your seat warm while we sync accounts.");
 

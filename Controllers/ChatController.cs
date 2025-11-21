@@ -7,7 +7,19 @@ public class ChatController : Controller
 {
     public IActionResult Index()
     {
+        // Check if user is authenticated by checking for JWT and userId in session
+        var token = HttpContext.Session.GetString("JWTToken");
+        var userIdString = HttpContext.Session.GetString("UserId");
+
+        if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(userIdString))
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
         var viewModel = BuildViewModel();
+        viewModel.UserId = userIdString;
+        viewModel.JwtToken = token;
+
         return View(viewModel);
     }
 
