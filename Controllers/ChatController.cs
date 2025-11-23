@@ -11,10 +11,10 @@ public class ChatController : Controller
 		var token = HttpContext.Session.GetString("JWTToken");
 		var userIdString = HttpContext.Session.GetString("UserId");
 
-		if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(userIdString))
+		/* if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(userIdString))
 		{
 			return RedirectToAction("Login", "Account");
-		}
+		} */
 
 		var viewModel = BuildViewModel();
 		viewModel.UserId = userIdString;

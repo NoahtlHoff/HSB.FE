@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -522,6 +523,9 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: sticky;
+  top: 110px;
+  height: fit-content;
 }
 
 .chat-filters,
@@ -621,13 +625,12 @@ button:hover {
   flex-direction: column;
   align-items: center;
   padding: 36px 32px 28px;
-  overflow: hidden;
   background: rgba(13, 12, 26, 0.9);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
   gap: 18px;
-  height: calc(100vh - 220px);
-  max-height: calc(100vh - 220px);
+  min-height: calc(100vh - 220px);
+  height: auto;
 }
 
 .chat-main[data-empty="true"] {
@@ -740,8 +743,6 @@ button:hover {
   flex-direction: column;
   gap: 18px;
   padding: 0 8px 24px;
-  overflow-y: auto;
-  flex: 1 1 auto;
   width: min(860px, 100%);
   margin: 0 auto;
   min-height: 0;
@@ -909,6 +910,7 @@ button:hover {
   0% {
     box-shadow: 0 0 0 0 rgba(255, 223, 126, 0.35);
   }
+
   100% {
     box-shadow: 0 0 0 12px rgba(255, 223, 126, 0);
   }
@@ -1293,6 +1295,7 @@ button:hover {
 }
 
 @media (max-width: 960px) {
+
   .site-header,
   .site-footer,
   .page-content {
