@@ -36,8 +36,6 @@ if (ctx) {
     (ctx.traderProfiles ?? []).map((profile) => [profile.id, profile])
   );
 
-  let ideaCursor = 0;
-  let currentConversationId = null;
 
   const activateConversation = () => {
     if (chatMain && chatMain.dataset.empty !== "false") {
@@ -345,7 +343,7 @@ if (ctx) {
       chatLog.innerHTML = "";
 
       // Set current conversation ID
-      window.conversationId = conversationId;
+      window.currentConversationId = conversationId;
 
       // Activate conversation view
       activateConversation();
