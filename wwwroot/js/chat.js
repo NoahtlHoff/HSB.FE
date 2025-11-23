@@ -266,17 +266,6 @@ if (ctx) {
     chatLog.scrollTop = chatLog.scrollHeight;
   };
 
-  const suggestIdea = (profileLabel, strategyLabel) => {
-    const ideas = ctx.featuredIdeas ?? [];
-    if (ideas.length === 0) {
-      return `Scanning for ${profileLabel} opportunities focused on ${strategyLabel}.`;
-    }
-
-    const idea = ideas[ideaCursor % ideas.length];
-    ideaCursor += 1;
-    return `Scanning ${profileLabel} setups using ${strategyLabel}. ${idea.ticker} stands out with ${idea.thesis.toLowerCase()} Consider entries near ${idea.suggestedEntry.toFixed(2)} with exits around ${idea.suggestedExit.toFixed(2)}.`;
-  };
-
   // Fetch chat history from API
   const fetchChatHistory = async () => {
     try {
@@ -337,7 +326,6 @@ if (ctx) {
   // Load a conversation from history
   const loadConversation = async (conversationId) => {
     try {
-      console.log(conversationId)
       const response = await fetch(`${window.API_BASE_URL}/api/conversations/${conversationId}`, {
         method: "GET",
         headers: {
@@ -396,25 +384,6 @@ if (ctx) {
     } catch (error) {
       console.error("Error loading conversation:", error);
     }
-  };
-
-  // Start a new chat
-  const startNewChat = () => {
-    // Clear current conversation
-    currentConversationId = null;
-
-    // Clear chat log
-    chatLog.innerHTML = "";
-
-    // Reset to welcome screen
-    if (chatMain) {
-      chatMain.dataset.empty = "true";
-    }
-
-    // Remove active state from all history items
-    document.querySelectorAll(".chat-history-item").forEach((item) => {
-      item.classList.remove("active");
-    });
   };
 
   // Function for when user submits a chat message.
