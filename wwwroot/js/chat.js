@@ -16,7 +16,7 @@ if (ctx) {
   const traderSelect = document.getElementById("traderSelect");
   const strategySelect = document.getElementById("strategySelect");
   const strategyNotes = document.getElementById("strategyNotes");
-  const tradeIdeasToggle = document.getElementById("tradeIdeasToggle");
+
   const watchlistToggle = document.getElementById("watchlistIdeasToggle");
   const ideaDeck = document.getElementById("ideaDeck");
   const watchlist = document.getElementById("watchlist");
@@ -30,12 +30,14 @@ if (ctx) {
   const profilePanelClose = document.querySelector("[data-profile-panel-close]");
   const profileSummary = document.getElementById("profileSummary");
   const profilePanelMediaQuery = window.matchMedia("(max-width: 720px)");
+  const chatHistoryList = document.getElementById("chatHistoryList");
 
   const profiles = Object.fromEntries(
     (ctx.traderProfiles ?? []).map((profile) => [profile.id, profile])
   );
 
   let ideaCursor = 0;
+  let currentConversationId = null;
 
   const activateConversation = () => {
     if (chatMain && chatMain.dataset.empty !== "false") {
@@ -243,12 +245,7 @@ if (ctx) {
     applyWatchlistToggleState();
   };
 
-  const applyIdeaToggleState = () => {
-    const show = tradeIdeasToggle.checked;
-    ideaDeck.querySelectorAll(".idea-levels").forEach((section) => {
-      section.style.display = show ? "grid" : "none";
-    });
-  };
+
 
   const applyWatchlistToggleState = () => {
     const show = watchlistToggle.checked;
@@ -269,134 +266,243 @@ if (ctx) {
     chatLog.scrollTop = chatLog.scrollHeight;
   };
 
-  const suggestIdea = (profileLabel, strategyLabel) => {
-    const ideas = ctx.featuredIdeas ?? [];
-    if (ideas.length === 0) {
-      return `Scanning for ${profileLabel} opportunities focused on ${strategyLabel}.`;
-    }
+  // Fetch chat history from API
+  const fetchChatHistory = async () => {
+    try {
+      const response = await fetch(`${window.API_BASE_URL}/api/conversations`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${window.JWT_TOKEN}`,
+          "Content-Type": "application/json"
+        }
+      });
 
-    const idea = ideas[ideaCursor % ideas.length];
-    ideaCursor += 1;
-    return `Scanning ${profileLabel} setups using ${strategyLabel}. ${idea.ticker} stands out with ${idea.thesis.toLowerCase()} Consider entries near ${idea.suggestedEntry.toFixed(2)} with exits around ${idea.suggestedExit.toFixed(2)}.`;
+      if (response.ok) {
+        const conversations = await response.json();
+        renderChatHistory(conversations);
+      } else {
+        console.error("Failed to fetch chat history:", response.statusText);
+        // Show empty state even if fetch fails
+        renderChatHistory([]);
+      }
+    } catch (error) {
+      console.error("Error fetching chat history:", error);
+      // Show empty state even if fetch fails
+      renderChatHistory([]);
+    }
   };
 
-    // Function for when user submits a chat message.
-    async function handleComposerSubmit(e) {
-        e.preventDefault();
-        const userText = chatInput.value.trim();
-        if (!userText) return;
+  // Render chat history in sidebar
+  const renderChatHistory = (conversations) => {
+    if (!chatHistoryList) return;
 
-        // Display user message
-        appendMessage("user", userText);
-        chatInput.value = "";
+    chatHistoryList.innerHTML = "";
 
-        // Show temporary "Thinking..." message
-        const thinkingMsg = document.createElement("article");
-        thinkingMsg.className = "chat-message chat-message-assistant";
-        const bubble = document.createElement("div");
-        bubble.className = "bubble";
-        bubble.textContent = "Thinking...";
-        thinkingMsg.appendChild(bubble);
-        chatLog.appendChild(thinkingMsg);
-        chatLog.scrollTop = chatLog.scrollHeight;
-
-        try {
-            const headers = {
-                "Content-Type": "application/json"
-            };
-
-            // Add Authorization header if JWT token is available
-            if (window.JWT_TOKEN) {
-                headers["Authorization"] = `Bearer ${window.JWT_TOKEN}`;
-            }
-
-            const response = await fetch(`${window.API_BASE_URL}/chat`, {
-                method: "POST",
-                headers: headers,
-                body: JSON.stringify({
-                    role: "user",
-                    content: userText,
-                    userId: window.USER_ID || "1",
-                    conversationId: window.currentConversationId || ""
-                })
-            });
-
-            if (!response.ok) {
-                bubble.textContent = "Error: " + response.statusText;
-                return;
-            }
-
-            // Stream the response
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder("utf-8");
-            let buffer = "";
-            let accumulatedText = ""; // Store all text for markdown rendering
-
-            bubble.textContent = ""; // clear "Thinking..."
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                let parts = buffer.split("\n\n");
-                // Keep the last partial piece in buffer
-                buffer = parts.pop();
-
-                for (const part of parts) {
-                    if (part.startsWith("id: ")) {
-                        const conversationId = part.replace("id: ", "").trim();
-                        window.currentConversationId = conversationId
-                        continue;
-                    }
-                    else if (part.startsWith("data: ")) {
-                        const jsonText = part.replace(/^data: /, "");
-                        try {
-                            // Parse the JSON-escaped text
-                            const text = JSON.parse(jsonText);
-                            accumulatedText += text;
-
-                            // Render markdown
-                            if (typeof marked !== 'undefined') {
-                                bubble.innerHTML = marked.parse(accumulatedText);
-                            }
-                            else {
-                                // Fallback: at least preserve newlines
-                                bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
-                            }
-
-                            chatLog.scrollTop = chatLog.scrollHeight;
-
-                            // Delay the output for a more readable response.
-                            await new Promise(resolve => setTimeout(resolve, 50));
-
-                        } catch (parseErr) {
-                            console.error("Failed to parse SSE data:", parseErr, jsonText);
-                        }
-                    }
-                }
-            }
-
-            // Handle any remaining buffer
-            if (buffer && buffer.startsWith("data: ")) {
-                const jsonText = buffer.replace(/^data: /, "");
-                try {
-                    const text = JSON.parse(jsonText);
-                    accumulatedText += text;
-                    if (typeof marked !== 'undefined') {
-                        bubble.innerHTML = marked.parse(accumulatedText);
-                    } else {
-                        bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
-                    }
-                } catch (parseErr) {
-                    console.error("Failed to parse final SSE data:", parseErr);
-                }
-            }
-
-        } catch (err) {
-            bubble.textContent = "Error: " + err.message;
-        }
+    if (!conversations || conversations.length === 0) {
+      const emptyState = document.createElement("div");
+      emptyState.className = "empty-state";
+      emptyState.textContent = "No chat history";
+      chatHistoryList.appendChild(emptyState);
+      return;
     }
+
+    conversations.forEach((conversation) => {
+      const item = document.createElement("div");
+      item.className = "chat-history-item";
+      item.dataset.conversationId = conversation.conversationId;
+
+      const title = document.createElement("span");
+      title.className = "chat-title";
+      title.textContent = conversation.name || "Untitled Chat";
+
+      item.appendChild(title);
+
+      item.addEventListener("click", () => loadConversation(conversation.conversationId));
+
+      chatHistoryList.appendChild(item);
+    });
+  };
+
+  // Load a conversation from history
+  const loadConversation = async (conversationId) => {
+    try {
+      const response = await fetch(`${window.API_BASE_URL}/api/conversations/${conversationId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${window.JWT_TOKEN}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        console.error("Failed to load conversation:", response.statusText);
+        return;
+      }
+
+      const conversationData = await response.json();
+
+      // Clear current chat
+      chatLog.innerHTML = "";
+
+      // Set current conversation ID
+      window.conversationId = conversationId;
+
+      // Activate conversation view
+      activateConversation();
+
+      // Render all messages
+      if (conversationData.length > 0) {
+        conversationData.forEach((message) => {
+          const article = document.createElement("article");
+          article.className = `chat-message chat-message-${message.role.toLowerCase()}`;
+          const bubble = document.createElement("div");
+          bubble.className = "bubble";
+
+          // Render markdown if it's an assistant message
+          if (message.role.toLowerCase() === "assistant" && typeof marked !== 'undefined') {
+            bubble.innerHTML = marked.parse(message.content);
+          } else {
+            bubble.textContent = message.content;
+          }
+
+          article.appendChild(bubble);
+          chatLog.appendChild(article);
+        });
+
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      // Update active state in sidebar
+      document.querySelectorAll(".chat-history-item").forEach((item) => {
+        if (item.dataset.conversationId === conversationId) {
+          item.classList.add("active");
+        } else {
+          item.classList.remove("active");
+        }
+      });
+
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+    }
+  };
+
+  // Function for when user submits a chat message.
+  async function handleComposerSubmit(e) {
+    e.preventDefault();
+    const userText = chatInput.value.trim();
+    if (!userText) return;
+
+    // Display user message
+    appendMessage("user", userText);
+    chatInput.value = "";
+
+    // Show temporary "Thinking..." message
+    const thinkingMsg = document.createElement("article");
+    thinkingMsg.className = "chat-message chat-message-assistant";
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+    bubble.textContent = "Thinking...";
+    thinkingMsg.appendChild(bubble);
+    chatLog.appendChild(thinkingMsg);
+    chatLog.scrollTop = chatLog.scrollHeight;
+
+    try {
+      const headers = {
+        "Content-Type": "application/json"
+      };
+
+      // Add Authorization header if JWT token is available
+      if (window.JWT_TOKEN) {
+        headers["Authorization"] = `Bearer ${window.JWT_TOKEN}`;
+      }
+
+      const response = await fetch(`${window.API_BASE_URL}/chat`, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          role: "user",
+          content: userText,
+          userId: window.USER_ID || "1",
+          conversationId: window.currentConversationId || ""
+        })
+      });
+
+      if (!response.ok) {
+        bubble.textContent = "Error: " + response.statusText;
+        return;
+      }
+
+      // Stream the response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+      let accumulatedText = ""; // Store all text for markdown rendering
+
+      bubble.textContent = ""; // clear "Thinking..."
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        let parts = buffer.split("\n\n");
+        // Keep the last partial piece in buffer
+        buffer = parts.pop();
+
+        for (const part of parts) {
+          if (part.startsWith("id: ")) {
+            const conversationId = part.replace("id: ", "").trim();
+            window.currentConversationId = conversationId
+            continue;
+          }
+          else if (part.startsWith("data: ")) {
+            const jsonText = part.replace(/^data: /, "");
+            try {
+              // Parse the JSON-escaped text
+              const text = JSON.parse(jsonText);
+              accumulatedText += text;
+
+              // Render markdown
+              if (typeof marked !== 'undefined') {
+                bubble.innerHTML = marked.parse(accumulatedText);
+              }
+              else {
+                // Fallback: at least preserve newlines
+                bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
+              }
+
+              chatLog.scrollTop = chatLog.scrollHeight;
+
+              // Delay the output for a more readable response.
+              await new Promise(resolve => setTimeout(resolve, 50));
+
+            } catch (parseErr) {
+              console.error("Failed to parse SSE data:", parseErr, jsonText);
+            }
+          }
+        }
+      }
+
+      // Handle any remaining buffer
+      if (buffer && buffer.startsWith("data: ")) {
+        const jsonText = buffer.replace(/^data: /, "");
+        try {
+          const text = JSON.parse(jsonText);
+          accumulatedText += text;
+          if (typeof marked !== 'undefined') {
+            bubble.innerHTML = marked.parse(accumulatedText);
+          } else {
+            bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
+          }
+        } catch (parseErr) {
+          console.error("Failed to parse final SSE data:", parseErr);
+        }
+      }
+
+    } catch (err) {
+      bubble.textContent = "Error: " + err.message;
+    }
+  }
 
   const initializeIdeaDeck = () => {
     ideaDeck.querySelectorAll(".idea-card").forEach((card) => {
@@ -423,7 +529,7 @@ if (ctx) {
     });
 
     ensureEmptyState();
-    applyIdeaToggleState();
+    ensureEmptyState();
   };
 
   if (profilePanel) {
@@ -476,11 +582,14 @@ if (ctx) {
   });
 
   strategySelect.addEventListener("change", updateStrategyNotes);
-  tradeIdeasToggle.addEventListener("change", applyIdeaToggleState);
+
   watchlistToggle.addEventListener("change", applyWatchlistToggleState);
   chatComposer.addEventListener("submit", handleComposerSubmit);
 
   refreshStrategyOptions();
   initializeIdeaDeck();
   applyWatchlistToggleState();
+
+  // Initialize chat history on page load
+  fetchChatHistory();
 }

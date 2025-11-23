@@ -14,37 +14,42 @@
 }
 
 <section class="chat-page chat-page--no-watchlist">
-    <aside class="chat-filters" data-profiles="@Html.Raw(JsonSerializer.Serialize(Model.TraderProfiles, jsonOptions))" data-profile-panel aria-hidden="false" tabindex="-1">
-        <button type="button" class="profile-panel-close" data-profile-panel-close aria-label="Close profile panel">&times;</button>
-        <h2>Your Profile</h2>
-        <p>Set trader type, strategies, and risk tolerance so the copilot tailors discovery, risk limits, and timing to you.</p>
+    <div class="chat-sidebar-container">
+        <aside class="chat-filters" data-profiles="@Html.Raw(JsonSerializer.Serialize(Model.TraderProfiles, jsonOptions))" data-profile-panel aria-hidden="false" tabindex="-1">
+            <button type="button" class="profile-panel-close" data-profile-panel-close aria-label="Close profile panel">&times;</button>
+            <h2>Your Profile</h2>
+            <p>Set trader type, strategies, and risk tolerance so the copilot tailors discovery, risk limits, and timing to you.</p>
 
-        <label for="traderSelect">Trader</label>
-        <select id="traderSelect" class="selector">
-            @foreach (var profile in Model.TraderProfiles)
-            {
-                <option value="@profile.Id">@profile.Label</option>
-            }
-        </select>
+            <label for="traderSelect">Trader</label>
+            <select id="traderSelect" class="selector">
+                @foreach (var profile in Model.TraderProfiles)
+                {
+                    <option value="@profile.Id">@profile.Label</option>
+                }
+            </select>
 
-        <label for="strategySelect">Strategy</label>
-        <select id="strategySelect" class="selector">
-            @{
-                var initialStrategies = Model.TraderProfiles.FirstOrDefault()?.Strategies ?? new List<StrategyOption>();
-            }
-            @foreach (var strategy in initialStrategies)
-            {
-                <option value="@strategy.Id" data-description="@strategy.Description">@strategy.Label</option>
-            }
-        </select>
-        <p id="strategyNotes" class="strategy-notes">@initialStrategies.FirstOrDefault()?.Description</p>
+            <label for="strategySelect">Strategy</label>
+            <select id="strategySelect" class="selector">
+                @{
+                    var initialStrategies = Model.TraderProfiles.FirstOrDefault()?.Strategies ?? new List<StrategyOption>();
+                }
+                @foreach (var strategy in initialStrategies)
+                {
+                    <option value="@strategy.Id" data-description="@strategy.Description">@strategy.Label</option>
+                }
+            </select>
+            <p id="strategyNotes" class="strategy-notes">@initialStrategies.FirstOrDefault()?.Description</p>
 
-        <label class="toggle">
-            <input id="tradeIdeasToggle" type="checkbox" checked>
-            <span>Show annotated entry &amp; exit ideas on charts</span>
-        </label>
 
-    </aside>
+        </aside>
+
+        <aside class="chat-history-sidebar" aria-hidden="false">
+            <h2>Previous Chats</h2>
+            <div id="chatHistoryList" class="chat-history-list">
+                <!-- Chat history items will be injected here -->
+            </div>
+        </aside>
+    </div>
 
     <div class="chat-main" id="chatMain" data-empty="true">
         <div class="chat-welcome" id="chatWelcome">
