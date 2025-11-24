@@ -243,15 +243,6 @@ if (ctx) {
     applyWatchlistToggleState();
   };
 
-
-
-  const applyWatchlistToggleState = () => {
-    const show = watchlistToggle.checked;
-    watchlist.querySelectorAll(".annotation, .note").forEach((element) => {
-      element.style.display = show ? "" : "none";
-    });
-  };
-
   const appendMessage = (role, text) => {
     activateConversation();
     const article = document.createElement("article");
@@ -502,34 +493,6 @@ if (ctx) {
     }
   }
 
-  const initializeIdeaDeck = () => {
-    ideaDeck.querySelectorAll(".idea-card").forEach((card) => {
-      const dataset = card.dataset;
-      const points = parsePoints(dataset.points ?? "");
-      const canvas = card.querySelector("canvas");
-      if (canvas) {
-        drawSparkline(canvas, points, { fill: true });
-      }
-
-      const button = card.querySelector(".idea-add");
-      if (button) {
-        button.addEventListener("click", () => {
-          buildWatchlistCard({
-            ticker: dataset.ticker,
-            company: dataset.company,
-            entry: dataset.entry,
-            exit: dataset.exit,
-            risk: dataset.risk,
-            points,
-          });
-        });
-      }
-    });
-
-    ensureEmptyState();
-    ensureEmptyState();
-  };
-
   if (profilePanel) {
     setProfilePanelState(profilePanelMediaQuery.matches ? false : true);
 
@@ -581,13 +544,8 @@ if (ctx) {
 
   strategySelect.addEventListener("change", updateStrategyNotes);
 
-  watchlistToggle.addEventListener("change", applyWatchlistToggleState);
   chatComposer.addEventListener("submit", handleComposerSubmit);
 
   refreshStrategyOptions();
-  initializeIdeaDeck();
-  applyWatchlistToggleState();
-
-  // Initialize chat history on page load
   fetchChatHistory();
 }
