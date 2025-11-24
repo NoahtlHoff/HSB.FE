@@ -80,28 +80,9 @@
 
         <p class="chat-hint">Copilot can make mistakes. Verify critical information.</p>
     </div>
-
-    <div id="ideaDeck" hidden></div>
-
-    <aside class="chat-watchlist" aria-hidden="true" hidden>
-        <div class="watchlist-header">
-            <h2>Compare Column</h2>
-            <p>Pin ideas to compare momentum, entries, exits, and risk—side‑by‑side.</p>
-        </div>
-        <div class="watchlist-items" id="watchlist" aria-live="polite">
-            <div class="empty-state">No stocks pinned yet. Add candidates from the idea deck.</div>
-        </div>
-        <label class="toggle">
-            <input id="watchlistIdeasToggle" type="checkbox" checked>
-            <span>Show recommendations for entry and exit.</span>
-        </label>
-    </aside>
 </section>
 
-<div class="profile-panel-overlay" data-profile-panel-overlay hidden></div>
-
 <script type="application/json" id="chat-seed">@Html.Raw(seedJson)</script>
-
 @section Scripts
 {
     @* Inject the API base URL from appsettings.json *@
