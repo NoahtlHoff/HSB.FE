@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HackStreeBoys_Website.Controllers;
 
+// Manages the chat interface and serves the initial chat state/view model.
 public class ChatController : Controller
 {
+	// Displays the main chat view.
 	public IActionResult Index()
 	{
 		// Check if user is authenticated by checking for JWT and userId in session
@@ -62,12 +64,6 @@ public class ChatController : Controller
 						new() { Id = "dividend", Label = "Dividend Compounders", Description = "Reliable cashflow with sustainable payout growth." }
 					}
 				}
-			},
-			SeedMessages = new List<ChatMessage>
-			{
-				new() { Role = "assistant", Content = "👋 Welcome! Pick your trading style and strategy, then ask for stock ideas or risk checks when you are ready." },
-				new() { Role = "user", Content = "Show me swing trades in semiconductors that are breaking out." },
-				new() { Role = "assistant", Content = "Got it. I’ll screen for liquid names with clean bases, accelerating earnings, and trend confirmation." }
 			},
 			FeaturedIdeas = new List<StockIdea>
 			{

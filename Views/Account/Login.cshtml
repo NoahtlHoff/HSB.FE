@@ -1,3 +1,6 @@
+@*
+    Displays the user login form.
+*@
 @model HackStreeBoys_Website.Models.LoginViewModel
 @{
     ViewData["Title"] = "Log in to TradeScope";
@@ -82,5 +85,5 @@
 
 @section Scripts
 {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @* Validation scripts removed *@
 }

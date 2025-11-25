@@ -1,3 +1,6 @@
+@*
+    Displays the user registration form.
+*@
 @model HackStreeBoys_Website.Models.RegisterViewModel
 @{
     ViewData["Title"] = "Create your TradeScope profile";
@@ -100,5 +103,5 @@
 
 @section Scripts
 {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @* Validation scripts removed *@
 }

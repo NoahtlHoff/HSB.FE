@@ -24,8 +24,8 @@ public class Program
 		.ValidateDataAnnotations()
 		.ValidateOnStart();
 
-    builder.Services.AddScoped<AuthService>();
-    builder.Services.AddScoped<ChatService>();
+	    builder.Services.AddScoped<AuthService>();
+	    builder.Services.AddScoped<ChatService>();
 		builder.Services.AddHttpClient("API", (sp, client) =>
 		{
 			var settings = sp.GetRequiredService<IOptions<ApiSettings>>().Value;
