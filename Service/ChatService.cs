@@ -2,6 +2,7 @@ using HackStreeBoys_Website.Models;
 
 namespace HackStreeBoys_Website.Service
 {
+    // Handles chat-related API calls (fetching conversations).
     public class ChatService
     {
         private readonly IHttpClientFactory _httpClientFactory;
@@ -11,6 +12,7 @@ namespace HackStreeBoys_Website.Service
             _httpClientFactory = httpClientFactory;
         }
 
+        // Retrieves a list of conversations for a specific user.
         public async Task<List<ConversationDto>?> GetConversationsAsync(string userId)
         {
             var client = _httpClientFactory.CreateClient("API");
@@ -25,6 +27,7 @@ namespace HackStreeBoys_Website.Service
             return null;
         }
 
+        // Retrieves details for a specific conversation.
         public async Task<ConversationDetailDto?> GetConversationByIdAsync(string conversationId)
         {
             var client = _httpClientFactory.CreateClient("API");

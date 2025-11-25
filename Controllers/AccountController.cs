@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace HackStreeBoys_Website.Controllers;
 
+// Manages user authentication, registration, and login sessions.
 public class AccountController(AuthService authService) : Controller
 {
 	private const string SuccessLevel = "success";
@@ -11,12 +12,14 @@ public class AccountController(AuthService authService) : Controller
 
 	private readonly AuthService _authService = authService;
 
+	// Displays the registration page.
 	[HttpGet]
 	public IActionResult Register()
 	{
 		return View(new RegisterViewModel());
 	}
 
+	// Handles user registration submission.
 	[HttpPost]
 	[ValidateAntiForgeryToken]
 	public async Task<IActionResult> Register(RegisterViewModel model)
@@ -54,12 +57,14 @@ public class AccountController(AuthService authService) : Controller
 		}
 	}
 
+	// Displays the login page.
 	[HttpGet]
 	public IActionResult Login()
 	{
 		return View(new LoginViewModel());
 	}
 
+	// Handles user login submission.
 	[HttpPost]
 	[ValidateAntiForgeryToken]
 	public async Task<IActionResult> Login(LoginViewModel model)
@@ -94,6 +99,8 @@ public class AccountController(AuthService authService) : Controller
 			return View(model);
 		}
 	}
+
+	// Logs the user out and clears the session.
 	public IActionResult Logout()
 	{
 		HttpContext.Session.Clear();

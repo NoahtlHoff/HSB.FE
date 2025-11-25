@@ -1,117 +1,116 @@
-document.addEventListener("DOMContentLoaded", () => {
-  highlightNavigation();
-  enableLiveValidation();
-  initMobileNavigation();
-});
+/**
+ * SiteUI
+ * Handles global UI interactions like navigation and form validation.
+ */
+class SiteUI {
+  constructor() {
+    this.init();
+  }
 
-function highlightNavigation() {
-  const links = document.querySelectorAll(".primary-nav .nav-link");
-  const currentPath = window.location.pathname.toLowerCase();
+  init() {
+    this.highlightNavigation();
+    this.enableLiveValidation();
+    this.initMobileNavigation();
+  }
 
-  links.forEach((link) => {
-    const target = link.pathname.toLowerCase();
-    if (target === "/") {
-      if (currentPath === "/") {
+  highlightNavigation() {
+    const links = document.querySelectorAll(".primary-nav .nav-link");
+    const currentPath = window.location.pathname.toLowerCase();
+
+    links.forEach((link) => {
+      const target = link.pathname.toLowerCase();
+      if (target === "/") {
+        if (currentPath === "/") {
+          link.classList.add("active");
+        }
+      } else if (currentPath.startsWith(target)) {
         link.classList.add("active");
       }
-    } else if (currentPath.startsWith(target)) {
-      link.classList.add("active");
-    }
-  });
-}
-
-function enableLiveValidation() {
-  const forms = document.querySelectorAll("form[data-live-validate]");
-  if (!forms.length) {
-    return;
+    });
   }
 
-  forms.forEach((form) => {
-    const inputs = form.querySelectorAll("[data-field-input]");
-    inputs.forEach((input) => {
-      const fieldGroup = input.closest(".form-group");
-      const statusBadge = fieldGroup?.querySelector("[data-field-status]");
-      const statusLabel = statusBadge?.querySelector(".status-text");
-      let hasInteracted = false;
+  enableLiveValidation() {
+    const forms = document.querySelectorAll("form[data-live-validate]");
+    if (!forms.length) return;
 
-      const setIdleState = () => {
-        input.classList.remove("is-valid", "is-invalid");
-        if (statusBadge) {
-          statusBadge.dataset.state = "idle";
-        }
-        if (statusLabel) {
-          statusLabel.textContent = "";
-        }
-      };
+    forms.forEach((form) => {
+      const inputs = form.querySelectorAll("[data-field-input]");
+      inputs.forEach((input) => {
+        const fieldGroup = input.closest(".form-group");
+        const statusBadge = fieldGroup?.querySelector("[data-field-status]");
+        const statusLabel = statusBadge?.querySelector(".status-text");
+        let hasInteracted = false;
 
-      const updateState = () => {
-        if (!hasInteracted) {
-          return;
-        }
+        const setIdleState = () => {
+          input.classList.remove("is-valid", "is-invalid");
+          if (statusBadge) statusBadge.dataset.state = "idle";
+          if (statusLabel) statusLabel.textContent = "";
+        };
 
-        const isValid = input.checkValidity();
-        input.classList.toggle("is-valid", isValid);
-        input.classList.toggle("is-invalid", !isValid);
+        const updateState = () => {
+          if (!hasInteracted) return;
 
-        if (statusBadge) {
-          statusBadge.dataset.state = isValid ? "valid" : "invalid";
-        }
+          const isValid = input.checkValidity();
+          input.classList.toggle("is-valid", isValid);
+          input.classList.toggle("is-invalid", !isValid);
 
-        if (statusLabel) {
-          statusLabel.textContent = isValid ? "Looks good" : "Not valid yet";
-        }
-      };
+          if (statusBadge) {
+            statusBadge.dataset.state = isValid ? "valid" : "invalid";
+          }
 
-      setIdleState();
+          if (statusLabel) {
+            statusLabel.textContent = isValid ? "Looks good" : "Not valid yet";
+          }
+        };
 
-      const handleInteraction = () => {
-        if (!hasInteracted) {
-          hasInteracted = true;
-        }
-        updateState();
-      };
+        setIdleState();
 
-      input.addEventListener("input", handleInteraction);
-      input.addEventListener("blur", handleInteraction);
+        const handleInteraction = () => {
+          if (!hasInteracted) hasInteracted = true;
+          updateState();
+        };
+
+        input.addEventListener("input", handleInteraction);
+        input.addEventListener("blur", handleInteraction);
+      });
     });
-  });
-}
-
-function initMobileNavigation() {
-  const nav = document.getElementById("primaryNav");
-  const toggle = document.querySelector("[data-nav-toggle]");
-  if (!nav || !toggle) {
-    return;
   }
 
-  const closeNav = () => {
-    toggle.setAttribute("aria-expanded", "false");
-    nav.classList.remove("is-open");
-  };
+  initMobileNavigation() {
+    const nav = document.getElementById("primaryNav");
+    const toggle = document.querySelector("[data-nav-toggle]");
 
-  toggle.addEventListener("click", (event) => {
-    event.stopPropagation();
-    const isExpanded = toggle.getAttribute("aria-expanded") === "true";
-    toggle.setAttribute("aria-expanded", String(!isExpanded));
-    nav.classList.toggle("is-open", !isExpanded);
-  });
+    if (!nav || !toggle) return;
 
-  nav.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      if (window.matchMedia("(max-width: 900px)").matches) {
-        closeNav();
-      }
+    const closeNav = () => {
+      toggle.setAttribute("aria-expanded", "false");
+      nav.classList.remove("is-open");
+    };
+
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isExpanded = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", String(!isExpanded));
+      nav.classList.toggle("is-open", !isExpanded);
     });
-  });
 
-  document.addEventListener("click", (event) => {
-    if (!nav.classList.contains("is-open")) {
-      return;
-    }
+    nav.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        if (window.matchMedia("(max-width: 900px)").matches) {
+          closeNav();
+        }
+      });
+    });
 
-    if (nav.contains(event.target) || toggle.contains(event.target)) {
-      return;
-    }
-    closeNav();
-  });
+    document.addEventListener("click", (event) => {
+      if (!nav.classList.contains("is-open")) return;
+      if (nav.contains(event.target) || toggle.contains(event.target)) return;
+      closeNav();
+    });
+  }
 }
+
+// Initialize SiteUI when DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  window.siteUI = new SiteUI();
+});

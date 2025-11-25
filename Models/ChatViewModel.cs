@@ -3,7 +3,7 @@ namespace HackStreeBoys_Website.Models;
 public class ChatViewModel
 {
 	public List<TraderProfileOption> TraderProfiles { get; set; } = new();
-	public List<ChatMessage> SeedMessages { get; set; } = new();
+
 	public List<StockIdea> FeaturedIdeas { get; set; } = new();
 	public string UserId { get; set; } = string.Empty;
 	public string JwtToken { get; set; } = string.Empty;

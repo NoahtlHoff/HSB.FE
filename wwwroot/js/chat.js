@@ -1,433 +1,79 @@
-const ctx = (() => {
-  const seedElement = document.getElementById("chat-seed");
-  if (!seedElement) {
-    return null;
+/**
+ * ChatApi
+ * Handles all network requests to the backend.
+ */
+class ChatApi {
+  constructor(baseUrl, jwtToken, userId) {
+    this.baseUrl = baseUrl;
+    this.jwtToken = jwtToken;
+    this.userId = userId;
   }
 
-  try {
-    return JSON.parse(seedElement.textContent);
-  } catch (error) {
-    console.error("Unable to parse chat seed payload", error);
-    return null;
-  }
-})();
-
-if (ctx) {
-  const traderSelect = document.getElementById("traderSelect");
-  const strategySelect = document.getElementById("strategySelect");
-  const strategyNotes = document.getElementById("strategyNotes");
-
-  const watchlistToggle = document.getElementById("watchlistIdeasToggle");
-  const ideaDeck = document.getElementById("ideaDeck");
-  const watchlist = document.getElementById("watchlist");
-  const chatLog = document.getElementById("chatLog");
-  const chatComposer = document.getElementById("chatComposer");
-  const chatInput = document.getElementById("chatInput");
-  const chatMain = document.getElementById("chatMain");
-  const profilePanel = document.querySelector("[data-profile-panel]");
-  const profilePanelOverlay = document.querySelector("[data-profile-panel-overlay]");
-  const profilePanelToggleButtons = document.querySelectorAll("[data-profile-panel-toggle]");
-  const profilePanelClose = document.querySelector("[data-profile-panel-close]");
-  const profileSummary = document.getElementById("profileSummary");
-  const profilePanelMediaQuery = window.matchMedia("(max-width: 720px)");
-  const chatHistoryList = document.getElementById("chatHistoryList");
-
-  const profiles = Object.fromEntries(
-    (ctx.traderProfiles ?? []).map((profile) => [profile.id, profile])
-  );
-
-
-  const activateConversation = () => {
-    if (chatMain && chatMain.dataset.empty !== "false") {
-      chatMain.dataset.empty = "false";
+  get headers() {
+    const headers = {
+      "Content-Type": "application/json"
+    };
+    if (this.jwtToken) {
+      headers["Authorization"] = `Bearer ${this.jwtToken}`;
     }
-  };
-
-  if (chatMain && chatLog && chatLog.children.length > 0) {
-    chatMain.dataset.empty = "false";
+    return headers;
   }
 
-  const parsePoints = (datasetPoints) =>
-    datasetPoints
-      .split(",")
-      .map((value) => Number.parseFloat(value))
-      .filter((value) => Number.isFinite(value));
-
-  const drawSparkline = (canvas, points, options = {}) => {
-    if (!canvas || !canvas.getContext || points.length === 0) {
-      return;
-    }
-
-    const ctx2d = canvas.getContext("2d");
-    const width = canvas.width;
-    const height = canvas.height;
-    ctx2d.clearRect(0, 0, width, height);
-
-    const min = Math.min(...points);
-    const max = Math.max(...points);
-    const spread = max - min || 1;
-    const step = width / Math.max(points.length - 1, 1);
-
-    ctx2d.lineWidth = 2.5;
-    ctx2d.strokeStyle = options.stroke || "#8df2ff";
-    ctx2d.beginPath();
-    points.forEach((value, index) => {
-      const x = index * step;
-      const y = height - ((value - min) / spread) * height;
-      if (index === 0) {
-        ctx2d.moveTo(x, y);
-      } else {
-        ctx2d.lineTo(x, y);
-      }
-    });
-    ctx2d.stroke();
-
-    if (options.fill) {
-      const gradient = ctx2d.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, options.fillStart ?? "rgba(141, 242, 255, 0.32)");
-      gradient.addColorStop(1, options.fillEnd ?? "rgba(22, 15, 60, 0)");
-      ctx2d.lineTo(width, height);
-      ctx2d.lineTo(0, height);
-      ctx2d.closePath();
-      ctx2d.fillStyle = gradient;
-      ctx2d.fill();
-    }
-  };
-
-  const updateProfileSummary = () => {
-    if (!profileSummary || !traderSelect || !strategySelect) {
-      return;
-    }
-    const traderLabel = traderSelect.selectedOptions[0]?.textContent?.trim();
-    const strategyLabel = strategySelect.selectedOptions[0]?.textContent?.trim();
-    const summary = [traderLabel, strategyLabel].filter(Boolean).join(" • ");
-    profileSummary.textContent = summary || "Adjust settings";
-  };
-
-  const refreshStrategyOptions = () => {
-    const profile = profiles[traderSelect.value];
-    if (!profile) {
-      return;
-    }
-
-    strategySelect.innerHTML = "";
-    profile.strategies.forEach((strategy, index) => {
-      const option = document.createElement("option");
-      option.value = strategy.id;
-      option.textContent = strategy.label;
-      option.dataset.description = strategy.description;
-      if (index === 0) {
-        option.selected = true;
-      }
-      strategySelect.appendChild(option);
-    });
-
-    strategyNotes.textContent = profile.strategies[0]?.description ?? "";
-    updateProfileSummary();
-  };
-
-  const updateStrategyNotes = () => {
-    const selected = strategySelect.selectedOptions[0];
-    if (selected) {
-      strategyNotes.textContent = selected.dataset.description ?? "";
-    }
-    updateProfileSummary();
-  };
-
-  let profileOverlayTimeout;
-
-  const setProfilePanelState = (open) => {
-    if (!profilePanel) {
-      return;
-    }
-
-    profilePanel.dataset.open = String(open);
-
-    if (!profilePanelMediaQuery.matches) {
-      profilePanel.setAttribute("aria-hidden", "false");
-      document.body.classList.remove("profile-panel-open");
-      if (profilePanelOverlay) {
-        profilePanelOverlay.classList.remove("is-active");
-        profilePanelOverlay.hidden = true;
-      }
-      return;
-    }
-
-    profilePanel.setAttribute("aria-hidden", open ? "false" : "true");
-    document.body.classList.toggle("profile-panel-open", open);
-
-    if (profilePanelOverlay) {
-      if (profileOverlayTimeout) {
-        clearTimeout(profileOverlayTimeout);
-        profileOverlayTimeout = null;
-      }
-
-      if (open) {
-        profilePanelOverlay.hidden = false;
-        const animate = window.requestAnimationFrame ?? ((cb) => setTimeout(cb, 0));
-        animate(() => {
-          profilePanelOverlay.classList.add("is-active");
-        });
-      } else {
-        profilePanelOverlay.classList.remove("is-active");
-        profileOverlayTimeout = window.setTimeout(() => {
-          profilePanelOverlay.hidden = true;
-        }, 220);
-      }
-    }
-
-    if (open && profilePanelMediaQuery.matches && typeof profilePanel.focus === "function") {
-      try {
-        profilePanel.focus({ preventScroll: true });
-      } catch (error) {
-        profilePanel.focus();
-      }
-    }
-  };
-
-  const ensureEmptyState = () => {
-    const hasCards = watchlist.querySelector(".watchlist-card");
-    const emptyState = watchlist.querySelector(".empty-state");
-    if (!hasCards && !emptyState) {
-      const placeholder = document.createElement("div");
-      placeholder.className = "empty-state";
-      placeholder.textContent = "No stocks pinned yet. Add candidates from the idea deck.";
-      watchlist.appendChild(placeholder);
-    } else if (hasCards && emptyState) {
-      emptyState.remove();
-    }
-  };
-
-  const buildWatchlistCard = (idea) => {
-    const existing = watchlist.querySelector(`[data-ticker="${idea.ticker}"]`);
-    if (existing) {
-      existing.classList.add("pulse");
-      setTimeout(() => existing.classList.remove("pulse"), 700);
-      return;
-    }
-
-    const card = document.createElement("article");
-    card.className = "watchlist-card";
-    card.dataset.ticker = idea.ticker;
-    card.innerHTML = `
-      <header>
-        <span class="ticker">${idea.ticker}</span>
-        <button type="button" class="remove" aria-label="Remove ${idea.ticker}">Remove</button>
-      </header>
-      <div class="chart">
-        <canvas width="260" height="70"></canvas>
-      </div>
-      <div class="annotation">
-        <span class="entry">Entry ${idea.entry}</span>
-        <span class="exit">Exit ${idea.exit}</span>
-      </div>
-      <p class="note">${idea.risk}</p>
-    `;
-
-    const removeButton = card.querySelector(".remove");
-    removeButton.addEventListener("click", () => {
-      card.remove();
-      ensureEmptyState();
-    });
-
-    watchlist.appendChild(card);
-    ensureEmptyState();
-
-    const canvas = card.querySelector("canvas");
-    drawSparkline(canvas, idea.points, {
-      stroke: "#ffdf7e",
-      fill: true,
-      fillStart: "rgba(255, 223, 126, 0.32)",
-      fillEnd: "rgba(16, 10, 40, 0)",
-    });
-    applyWatchlistToggleState();
-  };
-
-  const appendMessage = (role, text) => {
-    activateConversation();
-    const article = document.createElement("article");
-    article.className = `chat-message chat-message-${role}`;
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.textContent = text;
-    article.appendChild(bubble);
-    chatLog.appendChild(article);
-    chatLog.scrollTop = chatLog.scrollHeight;
-  };
-
-  // Fetch chat history from API
-  const fetchChatHistory = async () => {
+  async fetchHistory() {
     try {
-      const response = await fetch(`${window.API_BASE_URL}/api/conversations`, {
+      const response = await fetch(`${this.baseUrl}/api/conversations`, {
         method: "GET",
-        headers: {
-          "Authorization": `Bearer ${window.JWT_TOKEN}`,
-          "Content-Type": "application/json"
-        }
+        headers: this.headers
       });
-
       if (response.ok) {
-        const conversations = await response.json();
-        renderChatHistory(conversations);
-      } else {
-        console.error("Failed to fetch chat history:", response.statusText);
-        // Show empty state even if fetch fails
-        renderChatHistory([]);
+        return await response.json();
       }
+      console.error("Failed to fetch chat history:", response.statusText);
+      return [];
     } catch (error) {
       console.error("Error fetching chat history:", error);
-      // Show empty state even if fetch fails
-      renderChatHistory([]);
+      return [];
     }
-  };
+  }
 
-  // Render chat history in sidebar
-  const renderChatHistory = (conversations) => {
-    if (!chatHistoryList) return;
-
-    chatHistoryList.innerHTML = "";
-
-    if (!conversations || conversations.length === 0) {
-      const emptyState = document.createElement("div");
-      emptyState.className = "empty-state";
-      emptyState.textContent = "No chat history";
-      chatHistoryList.appendChild(emptyState);
-      return;
-    }
-
-    conversations.forEach((conversation) => {
-      const item = document.createElement("div");
-      item.className = "chat-history-item";
-      item.dataset.conversationId = conversation.conversationId;
-
-      const title = document.createElement("span");
-      title.className = "chat-title";
-      title.textContent = conversation.name || "Untitled Chat";
-
-      item.appendChild(title);
-
-      item.addEventListener("click", () => loadConversation(conversation.conversationId));
-
-      chatHistoryList.appendChild(item);
-    });
-  };
-
-  // Load a conversation from history
-  const loadConversation = async (conversationId) => {
+  async fetchConversation(conversationId) {
     try {
-      const response = await fetch(`${window.API_BASE_URL}/api/conversations/${conversationId}`, {
+      const response = await fetch(`${this.baseUrl}/api/conversations/${conversationId}`, {
         method: "GET",
-        headers: {
-          "Authorization": `Bearer ${window.JWT_TOKEN}`,
-          "Content-Type": "application/json"
-        }
+        headers: this.headers
       });
-
-      if (!response.ok) {
-        console.error("Failed to load conversation:", response.statusText);
-        return;
+      if (response.ok) {
+        return await response.json();
       }
-
-      const conversationData = await response.json();
-
-      // Clear current chat
-      chatLog.innerHTML = "";
-
-      // Set current conversation ID
-      window.currentConversationId = conversationId;
-
-      // Activate conversation view
-      activateConversation();
-
-      // Render all messages
-      if (conversationData.length > 0) {
-        conversationData.forEach((message) => {
-          const article = document.createElement("article");
-          article.className = `chat-message chat-message-${message.role.toLowerCase()}`;
-          const bubble = document.createElement("div");
-          bubble.className = "bubble";
-
-          // Render markdown if it's an assistant message
-          if (message.role.toLowerCase() === "assistant" && typeof marked !== 'undefined') {
-            bubble.innerHTML = marked.parse(message.content);
-          } else {
-            bubble.textContent = message.content;
-          }
-
-          article.appendChild(bubble);
-          chatLog.appendChild(article);
-        });
-
-        chatLog.scrollTop = chatLog.scrollHeight;
-      }
-
-      // Update active state in sidebar
-      document.querySelectorAll(".chat-history-item").forEach((item) => {
-        if (item.dataset.conversationId === conversationId) {
-          item.classList.add("active");
-        } else {
-          item.classList.remove("active");
-        }
-      });
-
+      console.error("Failed to load conversation:", response.statusText);
+      return null;
     } catch (error) {
       console.error("Error loading conversation:", error);
+      return null;
     }
-  };
+  }
 
-  // Function for when user submits a chat message.
-  async function handleComposerSubmit(e) {
-    e.preventDefault();
-    const userText = chatInput.value.trim();
-    if (!userText) return;
-
-    // Display user message
-    appendMessage("user", userText);
-    chatInput.value = "";
-
-    // Show temporary "Thinking..." message
-    const thinkingMsg = document.createElement("article");
-    thinkingMsg.className = "chat-message chat-message-assistant";
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.textContent = "Thinking...";
-    thinkingMsg.appendChild(bubble);
-    chatLog.appendChild(thinkingMsg);
-    chatLog.scrollTop = chatLog.scrollHeight;
-
+  async sendMessage(message, conversationId, onChunk, onComplete) {
     try {
-      const headers = {
-        "Content-Type": "application/json"
-      };
-
-      // Add Authorization header if JWT token is available
-      if (window.JWT_TOKEN) {
-        headers["Authorization"] = `Bearer ${window.JWT_TOKEN}`;
-      }
-
-      const response = await fetch(`${window.API_BASE_URL}/chat`, {
+      const response = await fetch(`${this.baseUrl}/chat`, {
         method: "POST",
-        headers: headers,
+        headers: this.headers,
         body: JSON.stringify({
           role: "user",
-          content: userText,
-          userId: window.USER_ID || "1",
-          conversationId: window.currentConversationId || ""
+          content: message,
+          userId: this.userId,
+          conversationId: conversationId || ""
         })
       });
 
       if (!response.ok) {
-        bubble.textContent = "Error: " + response.statusText;
-        return;
+        throw new Error(response.statusText);
       }
 
-      // Stream the response
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let buffer = "";
-      let accumulatedText = ""; // Store all text for markdown rendering
-
-      bubble.textContent = ""; // clear "Thinking..."
+      let newConversationId = conversationId;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -435,117 +81,359 @@ if (ctx) {
 
         buffer += decoder.decode(value, { stream: true });
         let parts = buffer.split("\n\n");
-        // Keep the last partial piece in buffer
         buffer = parts.pop();
 
         for (const part of parts) {
           if (part.startsWith("id: ")) {
-            const conversationId = part.replace("id: ", "").trim();
-            window.currentConversationId = conversationId
-            continue;
-          }
-          else if (part.startsWith("data: ")) {
+            newConversationId = part.replace("id: ", "").trim();
+          } else if (part.startsWith("data: ")) {
             const jsonText = part.replace(/^data: /, "");
             try {
-              // Parse the JSON-escaped text
               const text = JSON.parse(jsonText);
-              accumulatedText += text;
-
-              // Render markdown
-              if (typeof marked !== 'undefined') {
-                bubble.innerHTML = marked.parse(accumulatedText);
-              }
-              else {
-                // Fallback: at least preserve newlines
-                bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
-              }
-
-              chatLog.scrollTop = chatLog.scrollHeight;
-
-              // Delay the output for a more readable response.
-              await new Promise(resolve => setTimeout(resolve, 50));
-
-            } catch (parseErr) {
-              console.error("Failed to parse SSE data:", parseErr, jsonText);
+              if (onChunk) onChunk(text, newConversationId);
+            } catch (e) {
+              console.error("Failed to parse SSE data", e);
             }
           }
         }
       }
 
-      // Handle any remaining buffer
+      // Handle remaining buffer
       if (buffer && buffer.startsWith("data: ")) {
         const jsonText = buffer.replace(/^data: /, "");
         try {
           const text = JSON.parse(jsonText);
-          accumulatedText += text;
-          if (typeof marked !== 'undefined') {
-            bubble.innerHTML = marked.parse(accumulatedText);
-          } else {
-            bubble.innerHTML = accumulatedText.replace(/\n/g, '<br>');
-          }
-        } catch (parseErr) {
-          console.error("Failed to parse final SSE data:", parseErr);
+          if (onChunk) onChunk(text, newConversationId);
+        } catch (e) {
+          console.error("Failed to parse final SSE data", e);
         }
       }
 
-    } catch (err) {
-      bubble.textContent = "Error: " + err.message;
+      if (onComplete) onComplete(newConversationId);
+
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+/**
+ * ChatUI
+ * Handles all DOM manipulations and UI state.
+ */
+class ChatUI {
+  constructor() {
+    this.elements = {
+      chatLog: document.getElementById("chatLog"),
+      chatInput: document.getElementById("chatInput"),
+      chatComposer: document.getElementById("chatComposer"),
+      chatHistoryList: document.getElementById("chatHistoryList"),
+      chatMain: document.getElementById("chatMain"),
+      traderSelect: document.getElementById("traderSelect"),
+      strategySelect: document.getElementById("strategySelect"),
+      strategyNotes: document.getElementById("strategyNotes"),
+      profileSummary: document.getElementById("profileSummary"),
+      profilePanel: document.querySelector("[data-profile-panel]"),
+      profilePanelOverlay: document.querySelector("[data-profile-panel-overlay]"),
+      profilePanelToggleButtons: document.querySelectorAll("[data-profile-panel-toggle]"),
+      profilePanelClose: document.querySelector("[data-profile-panel-close]"),
+    };
+
+    this.profileMediaQuery = window.matchMedia("(max-width: 720px)");
+    this.initProfilePanel();
+  }
+
+  get inputValue() {
+    return this.elements.chatInput.value.trim();
+  }
+
+  set inputValue(val) {
+    this.elements.chatInput.value = val;
+  }
+
+  clearChat() {
+    this.elements.chatLog.innerHTML = "";
+  }
+
+  scrollToBottom() {
+    this.elements.chatLog.scrollTop = this.elements.chatLog.scrollHeight;
+  }
+
+  showMainChat() {
+    if (this.elements.chatMain) {
+      this.elements.chatMain.dataset.empty = "false";
     }
   }
 
-  if (profilePanel) {
-    setProfilePanelState(profilePanelMediaQuery.matches ? false : true);
+  appendMessage(role, text, isHtml = false) {
+    this.showMainChat();
+    const article = document.createElement("article");
+    article.className = `chat-message chat-message-${role}`;
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
 
-    profilePanelToggleButtons.forEach((button) => {
-      button.addEventListener("click", (event) => {
-        if (!profilePanelMediaQuery.matches) {
-          return;
-        }
-        event.preventDefault();
-        const isOpen = profilePanel.dataset.open === "true";
-        setProfilePanelState(!isOpen);
-      });
+    if (isHtml) {
+      bubble.innerHTML = text;
+    } else {
+      bubble.textContent = text;
+    }
+
+    article.appendChild(bubble);
+    this.elements.chatLog.appendChild(article);
+    this.scrollToBottom();
+    return bubble; // Return bubble for streaming updates
+  }
+
+  showThinking() {
+    return this.appendMessage("assistant", "Thinking...");
+  }
+
+  updateMessageContent(bubbleElement, text) {
+    if (typeof marked !== 'undefined') {
+      bubbleElement.innerHTML = marked.parse(text);
+    } else {
+      bubbleElement.innerHTML = text.replace(/\n/g, '<br>');
+    }
+    this.scrollToBottom();
+  }
+
+  renderHistory(conversations, onSelect) {
+    const list = this.elements.chatHistoryList;
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    if (!conversations || conversations.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "No chat history";
+      list.appendChild(empty);
+      return;
+    }
+
+    conversations.forEach(conv => {
+      const item = document.createElement("div");
+      item.className = "chat-history-item";
+      item.dataset.conversationId = conv.conversationId;
+
+      const title = document.createElement("span");
+      title.className = "chat-title";
+      title.textContent = conv.name || "Untitled Chat";
+
+      item.appendChild(title);
+      item.addEventListener("click", () => onSelect(conv.conversationId));
+      list.appendChild(item);
     });
+  }
 
-    if (profilePanelClose) {
-      profilePanelClose.addEventListener("click", () => setProfilePanelState(false));
-    }
-
-    if (profilePanelOverlay) {
-      profilePanelOverlay.addEventListener("click", () => setProfilePanelState(false));
-    }
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && profilePanelMediaQuery.matches && profilePanel.dataset.open === "true") {
-        setProfilePanelState(false);
+  setActiveHistoryItem(conversationId) {
+    const items = this.elements.chatHistoryList.querySelectorAll(".chat-history-item");
+    items.forEach(item => {
+      if (item.dataset.conversationId === conversationId) {
+        item.classList.add("active");
+      } else {
+        item.classList.remove("active");
       }
     });
+  }
 
-    const handleProfileViewportChange = (event) => {
-      if (event.matches) {
-        setProfilePanelState(false);
-      } else {
-        setProfilePanelState(true);
+  // Profile Panel Logic
+  initProfilePanel() {
+    if (!this.elements.profilePanel) return;
+
+    const setPanelState = (open) => {
+      const panel = this.elements.profilePanel;
+      const overlay = this.elements.profilePanelOverlay;
+      const isMobile = this.profileMediaQuery.matches;
+
+      panel.dataset.open = String(open);
+
+      if (!isMobile) {
+        panel.setAttribute("aria-hidden", "false");
+        document.body.classList.remove("profile-panel-open");
+        if (overlay) overlay.hidden = true;
+        return;
+      }
+
+      panel.setAttribute("aria-hidden", open ? "false" : "true");
+      document.body.classList.toggle("profile-panel-open", open);
+
+      if (overlay) {
+        overlay.hidden = !open;
+        overlay.classList.toggle("is-active", open);
       }
     };
 
-    if (typeof profilePanelMediaQuery.addEventListener === "function") {
-      profilePanelMediaQuery.addEventListener("change", handleProfileViewportChange);
-    } else if (typeof profilePanelMediaQuery.addListener === "function") {
-      profilePanelMediaQuery.addListener(handleProfileViewportChange);
+    // Initial state
+    setPanelState(!this.profileMediaQuery.matches);
+
+    // Event Listeners
+    this.elements.profilePanelToggleButtons.forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        if (!this.profileMediaQuery.matches) return;
+        e.preventDefault();
+        const isOpen = this.elements.profilePanel.dataset.open === "true";
+        setPanelState(!isOpen);
+      });
+    });
+
+    if (this.elements.profilePanelClose) {
+      this.elements.profilePanelClose.addEventListener("click", () => setPanelState(false));
     }
-  } else if (profilePanelOverlay) {
-    profilePanelOverlay.hidden = true;
+
+    if (this.elements.profilePanelOverlay) {
+      this.elements.profilePanelOverlay.addEventListener("click", () => setPanelState(false));
+    }
+
+    this.profileMediaQuery.addEventListener("change", (e) => {
+      setPanelState(!e.matches);
+    });
   }
 
-  traderSelect.addEventListener("change", () => {
-    refreshStrategyOptions();
-  });
+  updateProfileSummary() {
+    const { traderSelect, strategySelect, profileSummary } = this.elements;
+    if (!profileSummary || !traderSelect || !strategySelect) return;
 
-  strategySelect.addEventListener("change", updateStrategyNotes);
-
-  chatComposer.addEventListener("submit", handleComposerSubmit);
-
-  refreshStrategyOptions();
-  fetchChatHistory();
+    const trader = traderSelect.selectedOptions[0]?.textContent?.trim();
+    const strategy = strategySelect.selectedOptions[0]?.textContent?.trim();
+    profileSummary.textContent = [trader, strategy].filter(Boolean).join(" • ") || "Adjust settings";
+  }
 }
+
+/**
+ * ChatApp
+ * Main application logic.
+ */
+class ChatApp {
+  constructor() {
+    this.api = new ChatApi(window.API_BASE_URL, window.JWT_TOKEN, window.USER_ID);
+    this.ui = new ChatUI();
+    this.currentConversationId = "";
+    this.profiles = this.loadProfiles();
+
+    this.init();
+  }
+
+  loadProfiles() {
+    const seedElement = document.getElementById("chat-seed");
+    if (!seedElement) return {};
+    try {
+      const data = JSON.parse(seedElement.textContent);
+      return Object.fromEntries((data.traderProfiles ?? []).map(p => [p.id, p]));
+    } catch (e) {
+      console.error("Failed to parse profiles", e);
+      return {};
+    }
+  }
+
+  async init() {
+    this.bindEvents();
+    this.refreshStrategyOptions(); // Initial render
+    await this.loadHistory();
+  }
+
+  bindEvents() {
+    // Chat Composer
+    this.ui.elements.chatComposer.addEventListener("submit", (e) => this.handleSubmit(e));
+
+    // Profile Settings
+    this.ui.elements.traderSelect.addEventListener("change", () => this.refreshStrategyOptions());
+    this.ui.elements.strategySelect.addEventListener("change", () => this.updateStrategyNotes());
+  }
+
+  refreshStrategyOptions() {
+    const { traderSelect, strategySelect, strategyNotes } = this.ui.elements;
+    const profile = this.profiles[traderSelect.value];
+
+    if (!profile) return;
+
+    strategySelect.innerHTML = "";
+    profile.strategies.forEach((strategy, index) => {
+      const option = document.createElement("option");
+      option.value = strategy.id;
+      option.textContent = strategy.label;
+      option.dataset.description = strategy.description;
+      if (index === 0) option.selected = true;
+      strategySelect.appendChild(option);
+    });
+
+    if (strategyNotes) {
+      strategyNotes.textContent = profile.strategies[0]?.description ?? "";
+    }
+    this.ui.updateProfileSummary();
+  }
+
+  updateStrategyNotes() {
+    const { strategySelect, strategyNotes } = this.ui.elements;
+    const selected = strategySelect.selectedOptions[0];
+    if (selected && strategyNotes) {
+      strategyNotes.textContent = selected.dataset.description ?? "";
+    }
+    this.ui.updateProfileSummary();
+  }
+
+  async loadHistory() {
+    const conversations = await this.api.fetchHistory();
+    this.ui.renderHistory(conversations, (id) => this.loadConversation(id));
+  }
+
+  async loadConversation(id) {
+    const conversation = await this.api.fetchConversation(id);
+    if (!conversation) return;
+
+    this.currentConversationId = id;
+    this.ui.clearChat();
+    this.ui.showMainChat();
+    this.ui.setActiveHistoryItem(id);
+
+    conversation.forEach(msg => {
+      const isAssistant = msg.role.toLowerCase() === "assistant";
+      if (isAssistant && typeof marked !== 'undefined') {
+        this.ui.appendMessage(msg.role.toLowerCase(), marked.parse(msg.content), true);
+      } else {
+        this.ui.appendMessage(msg.role.toLowerCase(), msg.content);
+      }
+    });
+  }
+
+  async handleSubmit(e) {
+    e.preventDefault();
+    const text = this.ui.inputValue;
+    if (!text) return;
+
+    this.ui.inputValue = "";
+    this.ui.appendMessage("user", text);
+
+    const thinkingBubble = this.ui.showThinking();
+    let accumulatedText = "";
+
+    try {
+      await this.api.sendMessage(
+        text,
+        this.currentConversationId,
+        (chunk, newId) => {
+          // On Chunk
+          if (newId) this.currentConversationId = newId;
+          accumulatedText += chunk;
+          this.ui.updateMessageContent(thinkingBubble, accumulatedText);
+        },
+        (finalId) => {
+          // On Complete
+          if (finalId) {
+            this.currentConversationId = finalId;
+            // Refresh history to show new chat if it was a new conversation
+            // Debounce this or check if it's new to avoid unnecessary fetches
+            this.loadHistory();
+          }
+        }
+      );
+    } catch (err) {
+      thinkingBubble.textContent = "Error: " + err.message;
+    }
+  }
+}
+
+// Start App
+document.addEventListener("DOMContentLoaded", () => {
+  window.chatApp = new ChatApp();
+});
